@@ -14,7 +14,7 @@ export function HomePage() {
         
         <div className="space-y-2">
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-            Restaurante V2
+            Restaurante V2 commit 4 erick
           </h1>
           <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl">
             Sistema de commit 3 erick
