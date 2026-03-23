@@ -17,7 +17,7 @@ export function HomePage() {
             Restaurante V2
           </h1>
           <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl">
-            Sistema de gestión integral para tu restaurante commit 2 erick
+            Sistema de commit 3 erick
           </p>
         </div>
 
