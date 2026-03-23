@@ -24,6 +24,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* Rutas protegidas */}
+            {/* nueva rama de desarrollo */}
           <Route
             path="/dashboard"
             element={
