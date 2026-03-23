@@ -23,7 +23,7 @@ export function HomePage() {
 
         <div className="flex gap-4 justify-center">
           <Button asChild size="lg">
-            <Link to="/login">Iniciar Sesión commit 1 erick</Link>
+            <Link to="/login">Iniciar commit 5 erick</Link>
           </Button>
        
         </div>
