@@ -52,7 +52,7 @@ export function PlatosPage() {
       fetchPlatos();
     } catch (error) {
       console.error(error);
-      toast.error("Error al eliminar plato");
+      toast.error("Error al eliminar plato intente de nuevo");
     }
   };
 
