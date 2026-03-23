@@ -65,7 +65,6 @@ export function LoginForm({
             <div className="text-xs text-muted-foreground space-y-1 mt-2">
               <p className="font-medium">Usuarios de prueba:</p>
               <p>👤 admin / Admin123!</p>
-              <p>agrega con cuidado los datos</p>
               <p>👤 cajero1 / Cajero123!</p>
             </div>
           </div>
