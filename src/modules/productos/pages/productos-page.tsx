@@ -51,7 +51,7 @@ export function ProductosPage() {
   const handleDelete = async (id: string) => {
     try {
       await productosService.delete(id);
-      toast.success("Producto eliminado correctamente");
+      toast.success("Producto se a eliminado correctamente");
       fetchProductos();
     } catch (error) {
       console.error(error);
