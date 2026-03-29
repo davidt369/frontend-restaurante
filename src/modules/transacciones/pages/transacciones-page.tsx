@@ -112,7 +112,7 @@ export function TransaccionesPage() {
 
                             <TransaccionesStatsTabs counts={counts} />
 
-                            {["todos", "pendiente", "abierto", "cerrado"].map((tab) => (
+                            {["pendiente", "abierto", "cerrado"].map((tab) => (
                                 <TabsContent key={tab} value={tab} className="mt-6">
                                     {loading ? (
                                         <div className="text-center py-8">Cargando ventas...</div>
@@ -135,6 +135,20 @@ export function TransaccionesPage() {
                                     processingId={processingId}
                                     onCompletar={handleCompletarOrden}
                                 />
+                            </TabsContent>
+
+                            <TabsContent value="todos" className="mt-6">
+                                {loading ? (
+                                    <div className="text-center py-8">Cargando ventas...</div>
+                                ) : (
+                                    <TransaccionesTable
+                                        transacciones={filteredTransacciones("todos")}
+                                        onView={handleView}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                        onPay={handlePay}
+                                    />
+                                )}
                             </TabsContent>
                         </Tabs>
                     </CardContent>

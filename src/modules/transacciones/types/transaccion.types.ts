@@ -81,6 +81,7 @@ export type CreateTransaccionDto = {
     cliente?: string;
     estado?: 'pendiente' | 'abierto' | 'cerrado';
     caja_id?: number;
+    items?: AddItemDto[];
 };
 
 export type UpdateTransaccionDto = {

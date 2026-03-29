@@ -22,7 +22,7 @@ export function useTransaccionesPage() {
     const [pagos, setPagos] = useState<Pago[]>([]);
 
     // UI States
-    const [activeTab, setActiveTab] = useState<string>("todos");
+    const [activeTab, setActiveTab] = useState<string>("pendiente");
     const [processingId, setProcessingId] = useState<number | null>(null);
 
     // Dialog States
@@ -88,13 +88,13 @@ export function useTransaccionesPage() {
     useEffect(() => {
         let mounted = true;
         const loadCocina = async () => {
-            if (activeTab === "cocina" && mounted) {
+            if (mounted) {
                 await fetchPedidosCocina();
             }
         };
         loadCocina();
         return () => { mounted = false; };
-    }, [activeTab, fetchPedidosCocina]);
+    }, [fetchPedidosCocina]);
 
     // Handlers
     const handleCreate = () => setUnifiedViewOpen(true);
@@ -123,10 +123,11 @@ export function useTransaccionesPage() {
         pago?: CreatePagoDto
     ) => {
         try {
-            const created = await transaccionesService.create(transaccion);
-            for (const item of items) {
-                await transaccionesService.addItem(created.id, item);
-            }
+            // Unificamos la creación en una sola llamada para evitar inconsistencias y duplicados
+            const created = await transaccionesService.create({
+                ...transaccion,
+                items
+            });
 
             if (pago) {
                 await transaccionesService.addPago(created.id, pago);

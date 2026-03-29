@@ -74,6 +74,12 @@ export function DashboardPage() {
       description: "De ventas cerradas",
       icon: DollarSign,
     },
+    {
+      title: "Venta Proyectada",
+      value: `Bs ${Number(stats?.ventaTotalBrutaHoy ?? 0).toFixed(2)}`,
+      description: "Incluye pedidos abiertos",
+      icon: TrendingUp,
+    },
   ]
 
   return (

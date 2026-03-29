@@ -50,5 +50,9 @@ export const cajaService = {
   obtenerDetalleCaja: async (id: number): Promise<ResumenCierre> => {
     const { data } = await axiosInstance.get(`/caja/${id}/detalle`);
     return data;
+  },
+
+  guardarArqueo: async (id: number, dto: any): Promise<void> => {
+    await axiosInstance.patch(`/caja/${id}/arqueo`, dto);
   }
 };

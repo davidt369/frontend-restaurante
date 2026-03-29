@@ -294,7 +294,7 @@ export function PaymentDialog({
                                 )}
                             </>
                         )}
-
+                        {/* 
                         {metodoPago === "qr" && (
                             <FormField
                                 control={form.control}
@@ -315,7 +315,7 @@ export function PaymentDialog({
                                     </FormItem>
                                 )}
                             />
-                        )}
+                        )} */}
 
                         <div className="flex gap-2 pt-4">
                             <Button

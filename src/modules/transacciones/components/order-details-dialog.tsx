@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Trash2, ShoppingBag, Utensils, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect, Fragment } from "react";
+import { Plus, Trash2, ShoppingBag, Utensils, Sparkles, ChevronDown, ChevronUp, Calendar, Clock } from "lucide-react";
 import { formatDate, formatTime } from "@/utils/date-format";
 import {
     Dialog,
@@ -154,20 +154,22 @@ export function OrderDetailsDialog({
                             {transaccion.estado}
                         </Badge>
                     </div>
-                    <DialogDescription className="space-y-1 pt-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-sm">
-                            <span className="font-semibold text-foreground">
-                                {transaccion.mesa ? `Mesa: ${transaccion.mesa}` : "Para Llevar"}
-                            </span>
-                            {transaccion.cliente && (
-                                <span className="text-muted-foreground">
-                                    Cliente: <span className="text-foreground">{transaccion.cliente}</span>
+                    <DialogDescription asChild className="space-y-1 pt-2">
+                        <div>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-sm">
+                                <span className="font-semibold text-foreground">
+                                    {transaccion.mesa ? `Mesa: ${transaccion.mesa}` : "Para Llevar"}
                                 </span>
-                            )}
-                        </div>
-                        <div className="flex gap-4 text-xs text-muted-foreground">
-                            <span>📅 {formatDate(transaccion.fecha)}</span>
-                            <span>🕐 {formatTime(transaccion.hora)}</span>
+                                {transaccion.cliente && (
+                                    <span className="text-muted-foreground">
+                                        Cliente: <span className="text-foreground">{transaccion.cliente}</span>
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex gap-4 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> {formatDate(transaccion.fecha)}</span>
+                                <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {formatTime(transaccion.hora)}</span>
+                            </div>
                         </div>
                     </DialogDescription>
                 </DialogHeader>
@@ -228,8 +230,8 @@ export function OrderDetailsDialog({
                                 </TableHeader>
                                 <TableBody>
                                     {items.map((item) => (
-                                        <>
-                                            <TableRow key={item.id} className="group hover:bg-muted/20">
+                                        <Fragment key={item.id}>
+                                            <TableRow className="group hover:bg-muted/20">
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1">
                                                         <div className="flex items-center gap-2">
@@ -346,7 +348,7 @@ export function OrderDetailsDialog({
                                                     </TableCell>
                                                 </TableRow>
                                             )}
-                                        </>
+                                        </Fragment>
                                     ))}
                                 </TableBody>
                             </Table>

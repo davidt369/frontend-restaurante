@@ -178,6 +178,7 @@ export function CajaPage() {
                   <CajaDashboard
                     caja={cajaAbierta}
                     onCerrarCajaClick={() => setIsClosing(true)}
+                    onRefreshCaja={fetchEstadoCaja}
                   />
                 )
               ) : (

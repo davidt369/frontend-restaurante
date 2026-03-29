@@ -7,7 +7,6 @@ import type { CajaTurnoResponse, ResumenCierre } from '../types/caja.types';
 import { cajaService } from '../services/caja.service';
 import { RegistrarGastoDialog } from './registrar-gasto-dialog';
 import { RegistrarConteoCard } from './registrar-conteo-card';
-import { CuadrarCajaDialog } from './cuadrar-caja-dialog';
 import { format } from 'date-fns';
 import { ArrowDownCircle, ArrowUpCircle, Wallet, CreditCard, Lock, Eye, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +32,7 @@ interface DineroValues {
 interface CajaDashboardProps {
   caja: CajaTurnoResponse;
   onCerrarCajaClick: () => void;
+  onRefreshCaja: () => void;
 }
 
 interface StatusCardProps {
@@ -87,7 +87,7 @@ function DashboardSkeleton() {
   );
 }
 
-export function CajaDashboard({ caja, onCerrarCajaClick }: CajaDashboardProps) {
+export function CajaDashboard({ caja, onCerrarCajaClick, onRefreshCaja }: CajaDashboardProps) {
   const [resumen, setResumen] = useState<ResumenCierre | null>(null);
   const [loading, setLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -134,10 +134,21 @@ export function CajaDashboard({ caja, onCerrarCajaClick }: CajaDashboardProps) {
     }
   };
 
-  const handleConteoGuardado = (values: DineroValues, total: number) => {
-    console.log('Conteo guardado:', values, total);
-    toast.success('Conteo guardado exitosamente');
-    fetchResumen();
+  const handleConteoGuardado = async (values: DineroValues, total: number) => {
+    try {
+      setLoading(true);
+      await cajaService.guardarArqueo(caja.id, values);
+      toast.success('Arqueo guardado exitosamente', {
+        description: `Total contado: Bs ${total.toFixed(2)}`
+      });
+      fetchResumen();
+      onRefreshCaja();
+    } catch (error) {
+      console.error('Error al guardar arqueo', error);
+      toast.error('No se pudo guardar el arqueo');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!resumen && loading) return <DashboardSkeleton />;
@@ -146,18 +157,24 @@ export function CajaDashboard({ caja, onCerrarCajaClick }: CajaDashboardProps) {
 
   const { resumen: datos, gastos } = resumen;
 
+  const yaArqueado = 
+    caja.b200 !== null || caja.b100 !== null || caja.b50 !== null ||
+    caja.b20 !== null || caja.b10 !== null || caja.b5 !== null ||
+    caja.m2 !== null || caja.m1 !== null || caja.m050 !== null ||
+    caja.m020 !== null || caja.m010 !== null;
+
   const valoresIniciales: DineroValues = {
-    b200: caja.b200 || 0,
-    b100: caja.b100 || 0,
-    b50: caja.b50 || 0,
-    b20: caja.b20 || 0,
-    b10: caja.b10 || 0,
-    b5: caja.b5 || 0,
-    m2: caja.m2 || 0,
-    m1: caja.m1 || 0,
-    m050: caja.m050 || 0,
-    m020: caja.m020 || 0,
-    m010: caja.m010 || 0,
+    b200: caja.b200 ?? 0,
+    b100: caja.b100 ?? 0,
+    b50: caja.b50 ?? 0,
+    b20: caja.b20 ?? 0,
+    b10: caja.b10 ?? 0,
+    b5: caja.b5 ?? 0,
+    m2: caja.m2 ?? 0,
+    m1: caja.m1 ?? 0,
+    m050: caja.m050 ?? 0,
+    m020: caja.m020 ?? 0,
+    m010: caja.m010 ?? 0,
   };
 
   return (
@@ -167,6 +184,7 @@ export function CajaDashboard({ caja, onCerrarCajaClick }: CajaDashboardProps) {
           <div className="flex items-center gap-3">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Caja Abierta</h2>
             <Badge variant="default" className="bg-success">Activa</Badge>
+            {yaArqueado && <Badge variant="secondary" className="bg-info-bg text-info border-info-border">Arqueada</Badge>}
           </div>
           <p className="text-muted-foreground capitalize mt-1">
             {caja.fecha} • Hora apertura: {caja.hora_apertura?.split(' - ')[0] || '--:--'}
@@ -178,11 +196,6 @@ export function CajaDashboard({ caja, onCerrarCajaClick }: CajaDashboardProps) {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             <span className="hidden sm:inline">Actualizar</span>
           </Button>
-          <CuadrarCajaDialog 
-            efectivoEsperado={datos.efectivo_esperado} 
-            onCuadrado={fetchResumen}
-            cajaId={caja.id}
-          />
           <Button variant="outline" onClick={() => navigate('/caja/reporte')} className="gap-2">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Reporte</span>
@@ -224,6 +237,7 @@ export function CajaDashboard({ caja, onCerrarCajaClick }: CajaDashboardProps) {
         efectivoEsperado={datos.efectivo_esperado}
         onGuardar={handleConteoGuardado}
         valoresIniciales={valoresIniciales}
+        yaArqueado={yaArqueado}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

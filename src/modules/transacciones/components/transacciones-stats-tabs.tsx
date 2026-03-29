@@ -13,12 +13,13 @@ interface TransaccionesStatsTabsProps {
 
 export function TransaccionesStatsTabs({ counts }: TransaccionesStatsTabsProps) {
     return (
-        <TabsList variant="line" className="w-full justify-start border-b">
-            <TabsTrigger value="todos">
-                Todos ({counts.todos})
-            </TabsTrigger>
+        <TabsList variant="line" className="w-full justify-start border-b overflow-x-auto scrollbar-hide whitespace-nowrap">
             <TabsTrigger value="pendiente">
                 Pendientes ({counts.pendiente})
+            </TabsTrigger>
+            <TabsTrigger value="cocina">
+                <ChefHat className="h-4 w-4 mr-2" />
+                Cocina ({counts.cocina})
             </TabsTrigger>
             <TabsTrigger value="abierto">
                 Abiertos ({counts.abierto})
@@ -26,9 +27,8 @@ export function TransaccionesStatsTabs({ counts }: TransaccionesStatsTabsProps) 
             <TabsTrigger value="cerrado">
                 Cerrados ({counts.cerrado})
             </TabsTrigger>
-            <TabsTrigger value="cocina">
-                <ChefHat className="h-4 w-4 mr-2" />
-                Cocina ({counts.cocina})
+            <TabsTrigger value="todos">
+                Todos ({counts.todos})
             </TabsTrigger>
         </TabsList>
     );

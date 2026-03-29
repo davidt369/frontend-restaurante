@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,13 +51,15 @@ interface RegistrarConteoDialogProps {
   efectivoEsperado: number;
   onGuardar: (valores: ConteoDineroValues, total: number) => void;
   className?: string;
+  yaArqueado?: boolean;
 }
 
 export function RegistrarConteoCard({
   valoresIniciales,
   efectivoEsperado,
   onGuardar,
-  className
+  className,
+  yaArqueado
 }: RegistrarConteoDialogProps) {
   const [enabled, setEnabled] = useState(false);
   const [values, setValues] = useState<ConteoDineroValues>(
@@ -67,6 +69,18 @@ export function RegistrarConteoCard({
     }
   );
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (valoresIniciales) {
+      setValues(valoresIniciales);
+    }
+  }, [valoresIniciales]);
+
+  useEffect(() => {
+    if (yaArqueado !== undefined) {
+      setSaved(yaArqueado);
+    }
+  }, [yaArqueado]);
 
   const calcularTotal = () => {
     let total = 0;
@@ -104,7 +118,7 @@ export function RegistrarConteoCard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Banknote className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-base">Registrar Conteo de Caja</CardTitle>
+              <CardTitle className="text-base">Registrar Cuadre de Caja</CardTitle>
             </div>
             <div className="flex items-center gap-2">
               <Switch
@@ -131,7 +145,7 @@ export function RegistrarConteoCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Banknote className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Registrar Conteo de Caja</CardTitle>
+            <CardTitle className="text-base">Registrar Cuadre de Caja</CardTitle>
           </div>
           <div className="flex items-center gap-2">
             <Switch

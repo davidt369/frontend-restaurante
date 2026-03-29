@@ -90,7 +90,6 @@ export function CerrarCajaForm({ onCajaClosed, onCancel }: CerrarCajaFormProps) 
   }, []);
 
   const onSubmit = (values: CerrarCajaFormValues) => {
-    console.log("DEBUG: CerrarCajaForm onSubmit values:", values);
     setPendingValues(values);
     setShowConfirmDialog(true);
   };
@@ -100,7 +99,6 @@ export function CerrarCajaForm({ onCajaClosed, onCancel }: CerrarCajaFormProps) 
 
     try {
       setIsSubmitting(true);
-      console.log("DEBUG: Sending to backend:", pendingValues);
       await cajaService.cerrarCaja(pendingValues);
       toast.success('Caja cerrada exitosamente');
       onCajaClosed();
@@ -120,11 +118,11 @@ export function CerrarCajaForm({ onCajaClosed, onCancel }: CerrarCajaFormProps) 
   const esSobrante = diferencia > 0;
 
   return (
-    <Card className="w-full  mx-auto border-t-4 border-t-destructive">
+    <Card className="w-full mx-auto border-t-4 border-t-destructive">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Cierre de Caja</span>
-          <Button variant="ghost" size="sm" onClick={onCancel}>Cancelar</Button>
+          <Button variant="outline" size="sm" onClick={onCancel}>Cancelar y Volver</Button>
         </CardTitle>
         <CardDescription>
           Realiza el conteo físico final. El sistema comparará con el efectivo esperado.
@@ -202,16 +200,28 @@ export function CerrarCajaForm({ onCajaClosed, onCancel }: CerrarCajaFormProps) 
             </CardContent>
           </Card>
 
-          <Button
-            type="submit"
-            form="cierre-form"
-            className="w-full"
-            size="lg"
-            variant={esExacto ? 'default' : 'destructive'}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Cerrando...' : 'Confirmar Cierre'}
-          </Button>
+          <div className="flex gap-4 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              size="lg"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="cierre-form"
+              className="flex-[2]"
+              size="lg"
+              variant={esExacto ? 'default' : 'destructive'}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Cerrando...' : 'Confirmar Cierre'}
+            </Button>
+          </div>
         </div>
 
       </CardContent>

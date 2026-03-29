@@ -14,5 +14,6 @@ export interface DashboardStats {
     transaccionesHoy: number
     ordenesAbiertas: number
     ingresosHoy: string
+    ventaTotalBrutaHoy: string
     actividadReciente: ActividadItem[]
 }
