@@ -107,7 +107,7 @@ function App() {
           <Route
             path="/dashboard/cocina"
             element={
-              <ProtectedRoute allowedRoles={['admin', 'cajero', 'cocinero']}>
+              <ProtectedRoute allowedRoles={['admin', 'cajero']}>
                 <CocinaPage />
               </ProtectedRoute>
             }

@@ -2,7 +2,7 @@ export interface Usuario {
   id: string;
   nombre: string;
   nombre_usuario: string;
-  rol: string; // 'admin', 'cajero', 'mesero', 'cocinero', etc.
+  rol: string; // 'admin', 'cajero'
 }
 
 export interface LoginCredentials {

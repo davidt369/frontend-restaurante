@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/modules/auth/hooks/useAuth"
 import { Button } from "./ui/button"
 
-type Rol = 'admin' | 'cajero' | 'mesero' | 'cocinero' | 'gerente';
+type Rol = 'admin' | 'cajero';
 
 interface NavItem {
   title: string;
@@ -45,13 +45,13 @@ const navigationItems: NavItem[] = [
     title: "Panel de Control",
     url: "/dashboard",
     icon: LayoutDashboard,
-    allowedRoles: ['admin', 'gerente', 'cajero'],
+    allowedRoles: ['admin', 'cajero'],
   },
   {
     title: "Caja",
     url: "/caja",
     icon: DollarSign,
-    allowedRoles: ['admin', 'gerente', 'cajero'],
+    allowedRoles: ['admin', 'cajero'],
   },
   {
     title: "Usuarios",
@@ -63,54 +63,48 @@ const navigationItems: NavItem[] = [
     title: "Productos",
     url: "/dashboard/productos",
     icon: Package,
-    allowedRoles: ['admin', 'gerente'],
+    allowedRoles: ['admin'],
   },
   {
     title: "Ingredientes",
     url: "/dashboard/ingredientes",
     icon: Soup,
-    allowedRoles: ['admin', 'gerente'],
+    allowedRoles: ['admin'],
   },
   {
     title: "Platos o Recetas",
     url: "/dashboard/platos",
     icon: Utensils,
-    allowedRoles: ['admin', 'gerente'],
+    allowedRoles: ['admin'],
   },
   {
     title: "Ventas",
     url: "/dashboard/ventas",
     icon: Receipt,
-    allowedRoles: ['admin', 'gerente', 'cajero'],
+    allowedRoles: ['admin', 'cajero'],
   },
   {
     title: "Monitor de Cocina",
     url: "/dashboard/cocina",
     icon: ChefHat,
-    allowedRoles: ['admin', 'gerente', 'cocinero'],
+    allowedRoles: ['admin', 'cajero'],
   },
   {
     title: "Historial de Ventas",
     url: "/ventas/historial",
     icon: Receipt,
-    allowedRoles: ['admin', 'gerente', 'cajero'],
+    allowedRoles: ['admin', 'cajero'],
   },
 ]
 
 const rolLabels: Record<Rol, string> = {
   admin: 'Administrador',
-  gerente: 'Gerente',
   cajero: 'Cajero',
-  mesero: 'Mesero',
-  cocinero: 'Cocinero',
 };
 
 const rolColors: Record<Rol, string> = {
   admin: 'bg-destructive/10 text-destructive',
-  gerente: 'bg-primary/10 text-primary',
   cajero: 'bg-info/10 text-info',
-  mesero: 'bg-warning/10 text-warning',
-  cocinero: 'bg-secondary text-secondary-foreground',
 };
 
 export function AppSidebar() {
@@ -119,7 +113,7 @@ export function AppSidebar() {
   const { logout, usuario } = useAuth()
   const currentYear = new Date().getFullYear()
 
-  const userRole = (usuario?.rol?.toLowerCase() as Rol) || 'mesero';
+  const userRole = (usuario?.rol?.toLowerCase() as Rol) || 'cajero';
 
   const visibleItems = navigationItems.filter(item => 
     item.allowedRoles.includes(userRole)
