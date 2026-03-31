@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cajaService } from '../services/caja.service';
 import { type CajaTurnoResponse, type GastoCajaResponse } from '../types/caja.types';
 import { AbrirCajaForm } from '../components/abrir-caja-form';
@@ -23,6 +24,7 @@ const tabsConfig = {
 export function CajaPage() {
   const [cajaAbierta, setCajaAbierta] = useState<CajaTurnoResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [activeTab, setActiveTab] = useState<TabValue>('gestion');
 
   const [historialCajas, setHistorialCajas] = useState<CajaTurnoResponse[]>([]);
@@ -42,6 +44,7 @@ export function CajaPage() {
 
   const loadHistory = async () => {
     try {
+      setLoadingHistory(true);
       const [cajas, gastos] = await Promise.all([
         cajaService.obtenerHistorial(),
         cajaService.obtenerHistorialGastos()
@@ -50,6 +53,8 @@ export function CajaPage() {
       setHistorialGastos(gastos);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
@@ -78,7 +83,27 @@ export function CajaPage() {
 
   if (loading) return (
     <DashboardLayout>
-      <div className="p-8 text-center animate-pulse text-muted-foreground font-medium">Cargando sistema de caja...</div>
+      <div className="container mx-auto py-4 sm:py-8 space-y-8">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-9 w-[250px]" />
+          <Skeleton className="h-5 w-[200px]" />
+        </div>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 py-3">
+          <Skeleton className="h-12 w-full lg:w-[400px]" />
+          <Skeleton className="h-10 w-[200px]" />
+        </div>
+        <div className="space-y-6">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-48" />
+            <Skeleton className="h-48" />
+          </div>
+        </div>
+      </div>
     </DashboardLayout>
   );
 
@@ -175,7 +200,7 @@ export function CajaPage() {
               </CardHeader>
               <CardContent className="px-0">
                 <div className="rounded-2xl border bg-card/50 overflow-hidden shadow-sm">
-                  <HistorialCajasTable cajas={historialCajas} />
+                  <HistorialCajasTable cajas={historialCajas} isLoading={loadingHistory} />
                 </div>
               </CardContent>
             </Card>
@@ -202,7 +227,7 @@ export function CajaPage() {
               </CardHeader>
               <CardContent className="px-0">
                 <div className="rounded-2xl border bg-card/50 overflow-hidden shadow-sm">
-                  <HistorialGastosTable gastos={historialGastos} />
+                  <HistorialGastosTable gastos={historialGastos} isLoading={loadingHistory} />
                 </div>
               </CardContent>
             </Card>
