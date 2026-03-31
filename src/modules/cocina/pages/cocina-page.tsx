@@ -14,7 +14,7 @@ export default function CocinaPage() {
                 onRefresh={fetchPedidos}
             />
             <div className="flex-1 overflow-auto">
-                <CocinaPedidosList pedidos={pedidos} />
+                <CocinaPedidosList pedidos={pedidos} isLoading={loading} />
             </div>
         </div>
     );
