@@ -21,18 +21,54 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface IngredientesTableProps {
   ingredientes: Ingrediente[];
+  isLoading: boolean;
   onEdit: (ingrediente: Ingrediente) => void;
   onDelete: (id: string) => void;
 }
 
 export function IngredientesTable({
   ingredientes,
+  isLoading,
   onEdit,
   onDelete,
 }: IngredientesTableProps) {
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Cantidad</TableHead>
+              <TableHead>Unidad</TableHead>
+              <TableHead>Cantidad Mínima</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-[90px]" /></TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="h-8 w-8 ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
