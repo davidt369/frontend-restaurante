@@ -92,15 +92,12 @@ export function IngredientesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="text-center py-4">Cargando ingredientes...</div>
-            ) : (
-              <IngredientesTable
-                ingredientes={ingredientes}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            )}
+            <IngredientesTable
+              ingredientes={ingredientes}
+              isLoading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </CardContent>
         </Card>
 
