@@ -9,12 +9,14 @@ import {
 import { format, isValid } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { CajaTurnoResponse } from "../types/caja.types";
 import { Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface HistorialCajasTableProps {
   cajas: CajaTurnoResponse[];
+  isLoading?: boolean;
 }
 
 const formatTime = (dateString: string | null) => {
@@ -42,12 +44,45 @@ const formatDate = (dateString: string) => {
   return dateString;
 }
 
-export function HistorialCajasTable({ cajas }: HistorialCajasTableProps) {
+export function HistorialCajasTable({ cajas, isLoading = false }: HistorialCajasTableProps) {
   const navigate = useNavigate();
 
   const handleRowClick = (cajaId: number) => {
     navigate(`/caja/${cajaId}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Apertura</TableHead>
+              <TableHead>Cierre</TableHead>
+              <TableHead>Inicial</TableHead>
+              <TableHead>Ventas</TableHead>
+              <TableHead>Salidas</TableHead>
+              <TableHead>Estado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-[90px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-[80px]" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
 
   if (cajas.length === 0) {
     return <div className="text-center py-10 text-muted-foreground">No hay historial de cajas.</div>;
