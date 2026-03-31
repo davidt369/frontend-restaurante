@@ -14,7 +14,7 @@ import { Form } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { cajaService } from '../services/caja.service';
 import { useState, useEffect } from 'react';
-import { History, Banknote, Coins, Info } from 'lucide-react';
+import { History, Banknote, Coins } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const abrirCajaSchema = z.object({
@@ -195,157 +195,190 @@ export function AbrirCajaForm({ onCajaOpened }: AbrirCajaFormProps) {
   const total = calcularTotal();
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <History className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-base">Apertura de Caja</CardTitle>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Header fuera del card para dar aire */}
+      <div className="flex flex-col gap-1 text-center sm:text-left">
+        <h2 className="text-2xl font-bold tracking-tight">Apertura de Turno</h2>
+        <p className="text-muted-foreground text-sm">
+          Prepara tu caja registrando el fondo inicial disponible.
+        </p>
+      </div>
+
+      {ultimoCierre && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <History className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold uppercase tracking-wider">Último Cierre Registrado</span>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Card className="bg-primary/5 border-primary/10 shadow-none">
+              <CardHeader className="p-3 pb-0">
+                <CardDescription className="text-[10px] uppercase font-bold text-primary/70">Ventas Digitales</CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-1">
+                <p className="text-lg font-bold tabular-nums text-info">Bs {ultimoCierre.ventas_qr.toFixed(2)}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-primary/5 border-primary/10 shadow-none">
+              <CardHeader className="p-3 pb-0">
+                <CardDescription className="text-[10px] uppercase font-bold text-primary/70">Gastos Realizados</CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-1">
+                <p className="text-lg font-bold tabular-nums text-destructive">Bs {ultimoCierre.total_gastos.toFixed(2)}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-primary/5 border-primary/20 shadow-sm ring-1 ring-primary/5">
+              <CardHeader className="p-3 pb-0">
+                <CardDescription className="text-[10px] uppercase font-bold text-primary">Saldo en Caja Anterior</CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 pt-1">
+                <p className="text-xl font-black tabular-nums text-primary underline underline-offset-4 decoration-primary/30">Bs {ultimoCierre.efectivo_esperado.toFixed(2)}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="border-none bg-muted/30 shadow-none">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="apply-last-data"
+                  checked={applyLastData}
+                  onCheckedChange={(checked) => {
+                    const isChecked = checked === true;
+                    setApplyLastData(isChecked);
+                    if (isChecked && ultimoCierre) {
+                      form.reset({
+                        b200: ultimoCierre.b200 || 0,
+                        b100: ultimoCierre.b100 || 0,
+                        b50: ultimoCierre.b50 || 0,
+                        b20: ultimoCierre.b20 || 0,
+                        b10: ultimoCierre.b10 || 0,
+                        b5: ultimoCierre.b5 || 0,
+                        m2: ultimoCierre.m2 || 0,
+                        m1: ultimoCierre.m1 || 0,
+                        m050: ultimoCierre.m050 || 0,
+                        m020: ultimoCierre.m020 || 0,
+                        m010: ultimoCierre.m010 || 0,
+                      });
+                    } else {
+                      form.reset({
+                        b200: 0, b100: 0, b50: 0, b20: 0, b10: 0,
+                        b5: 0, m2: 0, m1: 0, m050: 0, m020: 0, m010: 0,
+                      });
+                    }
+                  }}
+                />
+                <label htmlFor="apply-last-data" className="text-sm font-medium leading-none cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+                  Iniciar con el saldo del cierre anterior
+                </label>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <CardDescription>
-          Ingresa el conteo inicial de efectivo para iniciar el turno.
-        </CardDescription>
-      </CardHeader>
+      )}
 
-      <CardContent className="space-y-5">
-        {ultimoCierre && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-primary/10 pb-2">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Último Cierre ({ultimoCierre.fecha})</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-              <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5">Ventas Electr.</span>
-                <p className="font-medium text-info">Bs {ultimoCierre.ventas_qr.toFixed(2)}</p>
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5">Gastos</span>
-                <p className="font-medium text-destructive">Bs {ultimoCierre.total_gastos.toFixed(2)}</p>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5 font-semibold text-primary">Efectivo Final Ant.</span>
-                <p className="font-bold text-primary text-base">Bs {ultimoCierre.efectivo_esperado.toFixed(2)}</p>
-              </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 grid gap-6 sm:grid-cols-2">
+              {/* Card Billetes */}
+              <Card className="shadow-sm overflow-hidden border-muted-foreground/10">
+                <CardHeader className="bg-muted/30 py-3 border-b border-muted-foreground/10">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-xs uppercase tracking-widest font-bold">Billetes</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3">
+                  {BILLETES.map(({ key, label, valor }) => (
+                    <div key={key} className="flex items-center justify-between group transition-all">
+                      <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">{label}</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="number"
+                          min="0"
+                          {...form.register(key as DineroKey, { valueAsNumber: true })}
+                          className="w-14 h-8 text-center border-none bg-muted/50 rounded-md text-sm font-bold focus:bg-background focus:ring-2 focus:ring-primary transition-all tabular-nums"
+                          placeholder="0"
+                        />
+                        <span className="text-[10px] font-mono text-muted-foreground/60 w-16 text-right tabular-nums">
+                          Bs {((watchedValues[key as DineroKey] || 0) * valor).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Card Monedas */}
+              <Card className="shadow-sm overflow-hidden border-muted-foreground/10">
+                <CardHeader className="bg-muted/30 py-3 border-b border-muted-foreground/10">
+                  <div className="flex items-center gap-2">
+                    <Coins className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-xs uppercase tracking-widest font-bold">Monedas</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3">
+                  {MONEDAS.map(({ key, label, valor }) => (
+                    <div key={key} className="flex items-center justify-between group transition-all">
+                      <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">{label}</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          {...form.register(key as DineroKey, { valueAsNumber: true })}
+                          className="w-14 h-8 text-center border-none bg-muted/50 rounded-md text-sm font-bold focus:bg-background focus:ring-2 focus:ring-primary transition-all tabular-nums"
+                          placeholder="0"
+                        />
+                        <span className="text-[10px] font-mono text-muted-foreground/60 w-16 text-right tabular-nums">
+                          Bs {((watchedValues[key as DineroKey] || 0) * valor).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              <Checkbox
-                id="apply-last-data"
-                checked={applyLastData}
-                onCheckedChange={(checked) => {
-                  const isChecked = checked === true;
-                  setApplyLastData(isChecked);
-                  if (isChecked && ultimoCierre) {
-                    form.reset({
-                      b200: ultimoCierre.b200 || 0,
-                      b100: ultimoCierre.b100 || 0,
-                      b50: ultimoCierre.b50 || 0,
-                      b20: ultimoCierre.b20 || 0,
-                      b10: ultimoCierre.b10 || 0,
-                      b5: ultimoCierre.b5 || 0,
-                      m2: ultimoCierre.m2 || 0,
-                      m1: ultimoCierre.m1 || 0,
-                      m050: ultimoCierre.m050 || 0,
-                      m020: ultimoCierre.m020 || 0,
-                      m010: ultimoCierre.m010 || 0,
-                    });
-                  } else {
-                    form.reset({
-                      b200: 0, b100: 0, b50: 0, b20: 0, b10: 0,
-                      b5: 0, m2: 0, m1: 0, m050: 0, m020: 0, m010: 0,
-                    });
-                  }
-                }}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="apply-last-data" className="text-sm cursor-pointer select-none text-muted-foreground font-medium">
-                Cargar valores del último cierre como fondo inicial
-              </label>
+            {/* Resumen Final y Acción */}
+            <div className="lg:col-span-1 space-y-6">
+              <Card className="bg-primary text-primary-foreground border-none shadow-lg shadow-primary/20 overflow-hidden relative group">
+                <div className="absolute top-0 right-0 p-8 transform translate-x-1/2 -translate-y-1/2 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700" />
+                <CardHeader className="relative z-10">
+                  <CardTitle className="text-xs uppercase tracking-widest font-bold text-primary-foreground/70">Total en Efectivo</CardTitle>
+                </CardHeader>
+                <CardContent className="relative z-10 pb-6">
+                  <p className="text-4xl font-black tabular-nums">Bs {total.toFixed(2)}</p>
+                  {ultimoCierre && applyLastData && (
+                    <div className="mt-3 py-1 px-2 bg-white/10 rounded-md inline-block">
+                      <p className="text-[10px] font-medium text-primary-foreground/80">
+                        {total === ultimoCierre.efectivo_esperado
+                          ? "✓ Cuadrado con el cierre"
+                          : `Dif. Cierre: Bs ${(total - ultimoCierre.efectivo_esperado).toFixed(2)}`}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  className="w-full h-14 text-base font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  disabled={isSubmitting || loadingLast}
+                  size="lg"
+                >
+                  {isSubmitting ? 'Abriendo Turno...' : 'Abrir Caja Ahora'}
+                </Button>
+                <p className="text-[10px] text-center text-muted-foreground px-4">
+                  Al confirmar, se iniciará el registro de todas las transacciones bajo tu usuario para este turno.
+                </p>
+              </div>
             </div>
           </div>
-        )}
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Banknote className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Billetes</span>
-                </div>
-                <div className="space-y-2">
-                  {BILLETES.map(({ key, label, valor }) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{label}</span>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="number"
-                          min="0"
-                          {...form.register(key as DineroKey, { valueAsNumber: true })}
-                          className="w-16 h-8 text-center border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                          placeholder="0"
-                        />
-                        <span className="text-xs text-muted-foreground w-16 text-right tabular-nums">
-                          Bs {((watchedValues[key as DineroKey] || 0) * valor).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Coins className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Monedas</span>
-                </div>
-                <div className="space-y-2">
-                  {MONEDAS.map(({ key, label, valor }) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{label}</span>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          {...form.register(key as DineroKey, { valueAsNumber: true })}
-                          className="w-16 h-8 text-center border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                          placeholder="0"
-                        />
-                        <span className="text-xs text-muted-foreground w-16 text-right tabular-nums">
-                          Bs {((watchedValues[key as DineroKey] || 0) * valor).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-lg border bg-muted/30 border-border text-center">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-muted-foreground">Fondo Inicial Total</span>
-              </div>
-              <p className="text-3xl font-bold tabular-nums">Bs {total.toFixed(2)}</p>
-              {ultimoCierre && applyLastData && (
-                <p className="text-xs text-muted-foreground mt-1 font-medium">
-                  {ultimoCierre.efectivo_esperado > 0
-                    ? `Diferencia de carga: -Bs ${Math.abs(total - ultimoCierre.efectivo_esperado).toFixed(2)}`
-                    : ''}
-                </p>
-              )}
-            </div>
-
-            <Button type="submit" className="w-full gap-2 font-medium" disabled={isSubmitting || loadingLast} size="lg">
-              {isSubmitting ? 'Abriendo caja...' : 'Confirmar Apertura de Caja'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        </form>
+      </Form>
+    </div>
   );
 }

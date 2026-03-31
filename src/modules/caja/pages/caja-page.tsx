@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cajaService } from '../services/caja.service';
@@ -8,7 +8,7 @@ import { AbrirCajaForm } from '../components/abrir-caja-form';
 import { CajaDashboard } from '../components/caja-dashboard';
 import { HistorialCajasTable } from '../components/historial-cajas-table';
 import { HistorialGastosTable } from '../components/historial-gastos-table';
-import { Archive, DollarSign, History, ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import { Archive, DollarSign, History, Home } from 'lucide-react';
 import DashboardLayout from '@/layouts/dashboard-layout';
 import { cn } from '@/lib/utils';
 
@@ -65,162 +65,149 @@ export function CajaPage() {
     }
   };
 
-  const goBack = () => {
-    if (activeTab === 'historial-gastos') {
-      setActiveTab('historial-cajas');
-    } else if (activeTab === 'historial-cajas') {
-      setActiveTab('gestion');
-    }
-  };
-
-  const goForward = () => {
-    if (activeTab === 'gestion') {
-      setActiveTab('historial-cajas');
-    } else if (activeTab === 'historial-cajas') {
-      setActiveTab('historial-gastos');
-    }
-  };
-
   const getBreadcrumb = () => {
     switch (activeTab) {
       case 'gestion':
-        return 'Gestión de Caja';
+        return 'Panel de Operaciones';
       case 'historial-cajas':
-        return 'Historial de Cierres';
+        return 'Logs de Cierre de Turnos';
       case 'historial-gastos':
-        return 'Historial de Gastos';
+        return 'Registro Histórico de Egresos';
     }
   };
 
   if (loading) return (
     <DashboardLayout>
-      <div className="p-8 text-center">Cargando sistema de caja...</div>
+      <div className="p-8 text-center animate-pulse text-muted-foreground font-medium">Cargando sistema de caja...</div>
     </DashboardLayout>
   );
 
   const tabOrder: TabValue[] = ['gestion', 'historial-cajas', 'historial-gastos'];
-  const currentIndex = tabOrder.indexOf(activeTab);
-  const canGoBack = currentIndex > 0;
-  const canGoForward = currentIndex < tabOrder.length - 1;
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-4 sm:py-6 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Gestión de Caja</h1>
-            <p className="text-muted-foreground text-sm mt-1">{getBreadcrumb()}</p>
-          </div>
+      <div className="container mx-auto py-4 sm:py-8 space-y-8">
+        {/* Page Header */}
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Gestión Financiera
+          </h1>
+          <p className="text-muted-foreground text-sm font-medium">
+            {getBreadcrumb()}
+          </p>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goBack}
-              disabled={!canGoBack}
-              className="gap-1"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Anterior</span>
-            </Button>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          {/* Dashboard Navigation - Ajustado top-16 para que se pegue DEBAJO del header global */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-background/95 backdrop-blur-md sticky top-16 z-20 py-3 border-b border-border/50">
+            <TabsList className="bg-muted/50 p-1 h-12 w-full lg:w-auto">
+              {tabOrder.map((tab) => {
+                const Icon = tabsConfig[tab].icon;
+                return (
+                  <TabsTrigger 
+                    key={tab} 
+                    value={tab} 
+                    className={cn(
+                      "flex-1 lg:px-6 h-10 gap-2 font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg",
+                      activeTab === tab ? "text-primary" : "text-muted-foreground"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{tabsConfig[tab].label}</span>
+                    <span className="sm:hidden">{tab === 'gestion' ? 'Hoy' : tab === 'historial-cajas' ? 'Turnos' : 'Gastos'}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
 
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-              {tabOrder.map((tab) => (
-                <Button
-                  key={tab}
-                  variant={activeTab === tab ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => handleTabChange(tab)}
-                  className={cn(
-                    "gap-1 sm:gap-2 px-2 sm:px-3",
-                    activeTab === tab && "shadow-sm"
-                  )}
-                >
-                  {(() => {
-                    const Icon = tabsConfig[tab].icon;
-                    return <Icon className="h-4 w-4" />;
-                  })()}
-                  <span className="hidden sm:inline text-xs sm:text-sm">{tabsConfig[tab].label}</span>
-                  <span className="sm:hidden text-xs">{tab === 'gestion' ? 'Caja' : tab === 'historial-cajas' ? 'Cierres' : 'Gastos'}</span>
-                </Button>
-              ))}
+            <div className="hidden lg:flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-full border border-border/50">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">
+                Cajero: {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </span>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goForward}
-              disabled={!canGoForward}
-              className="gap-1"
-            >
-              <span className="hidden sm:inline">Siguiente</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
           </div>
 
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-            <TabsContent value="gestion" className="space-y-4">
-              {cajaAbierta ? (
-                <CajaDashboard
-                  caja={cajaAbierta}
-                  onCajaCerrada={() => {
-                    fetchEstadoCaja();
-                    loadHistory();
-                  }}
-                  onRefreshCaja={fetchEstadoCaja}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center w-full py-2">
-                  <div className="text-center space-y-2 mb-4">
-                    <h2 className="text-xl sm:text-2xl font-bold text-muted-foreground/50">Caja Cerrada</h2>
-                    <p className="text-muted-foreground text-sm">Abre la caja para comenzar a registrar ventas y gastos.</p>
+          <TabsContent value="gestion" className="space-y-6 pt-2 focus-visible:outline-none">
+            {cajaAbierta ? (
+              <CajaDashboard
+                caja={cajaAbierta}
+                onCajaCerrada={() => {
+                  fetchEstadoCaja();
+                  loadHistory();
+                }}
+                onRefreshCaja={fetchEstadoCaja}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full min-h-[400px] border-2 border-dashed rounded-3xl bg-muted/5 border-muted-foreground/10 px-4">
+                <div className="text-center space-y-3 mb-8">
+                  <div className="bg-muted/50 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-border">
+                    <DollarSign className="h-8 w-8 text-muted-foreground/40" />
                   </div>
-                  <AbrirCajaForm onCajaOpened={fetchEstadoCaja} />
+                  <h2 className="text-2xl font-bold tracking-tight">Caja Cerrada</h2>
+                  <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                    No hay un turno activo en este momento. Inicia el conteo inicial para comenzar.
+                  </p>
                 </div>
-              )}
-            </TabsContent>
+                <AbrirCajaForm onCajaOpened={fetchEstadoCaja} />
+              </div>
+            )}
+          </TabsContent>
 
-            <TabsContent value="historial-cajas">
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setActiveTab('gestion')} className="h-8 w-8">
-                      <Home className="h-4 w-4" />
-                    </Button>
-                    <div>
-                      <CardTitle>Historial de Turnos</CardTitle>
-                      <CardDescription>Registro de aperturas y cierres de caja.</CardDescription>
-                    </div>
+          <TabsContent value="historial-cajas" className="focus-visible:outline-none">
+            <Card className="border-none shadow-none bg-transparent">
+              <CardHeader className="px-0 pb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-bold">Bitácora de Turnos</CardTitle>
+                    <CardDescription>Auditoría completa de aperturas y cierres.</CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setActiveTab('gestion')}
+                    className="gap-2"
+                  >
+                    <Home className="h-4 w-4" />
+                    <span>Inicio</span>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0">
+                <div className="rounded-2xl border bg-card/50 overflow-hidden shadow-sm">
                   <HistorialCajasTable cajas={historialCajas} />
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <TabsContent value="historial-gastos">
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setActiveTab('gestion')} className="h-8 w-8">
-                      <Home className="h-4 w-4" />
-                    </Button>
-                    <div>
-                      <CardTitle>Historial de Gastos</CardTitle>
-                      <CardDescription>Todos los gastos registrados en el sistema.</CardDescription>
-                    </div>
+          <TabsContent value="historial-gastos" className="focus-visible:outline-none">
+            <Card className="border-none shadow-none bg-transparent">
+              <CardHeader className="px-0 pb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-bold">Historial de Egresos</CardTitle>
+                    <CardDescription>Detalle cronológico de todos los gastos de caja.</CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setActiveTab('gestion')}
+                    className="gap-2"
+                  >
+                    <Home className="h-4 w-4" />
+                    <span>Inicio</span>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0">
+                <div className="rounded-2xl border bg-card/50 overflow-hidden shadow-sm">
                   <HistorialGastosTable gastos={historialGastos} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
