@@ -7,14 +7,49 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { UtensilsCrossed } from "lucide-react";
 import type { Transaccion } from "@/modules/transacciones/types/transaccion.types";
 
 type CocinaPedidosListProps = {
     pedidos: Transaccion[];
+    isLoading?: boolean;
 };
 
-export function CocinaPedidosList({ pedidos }: CocinaPedidosListProps) {
+export function CocinaPedidosList({ pedidos, isLoading = false }: CocinaPedidosListProps) {
+    if (isLoading) {
+        return (
+            <div className="rounded-xl border shadow-lg overflow-hidden bg-background flex flex-col h-[calc(100vh)]">
+                <div className="flex-1 overflow-auto">
+                    <Table className="border-collapse">
+                        <TableHeader className="bg-muted/90 sticky top-0 z-10 shadow-sm">
+                            <TableRow className="border-b-2 border-border hover:bg-muted/90">
+                                <TableHead className="text-center border-r font-bold text-lg py-3 w-[60px]">#</TableHead>
+                                <TableHead className="text-center border-r font-bold text-lg py-3 w-[100px]">Hora</TableHead>
+                                <TableHead className="border-r font-bold text-lg py-3 w-[200px]">Mesa / Cliente</TableHead>
+                                <TableHead className="text-center border-r font-bold text-lg py-3 w-20">Cant.</TableHead>
+                                <TableHead className="text-center border-r font-bold text-lg py-3 w-[100px]">Precio</TableHead>
+                                <TableHead className="font-bold text-lg py-3 w-[45%] bg-warning-bg dark:bg-warning-bg">Instructivos / Extras</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {[...Array(5)].map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell className="text-center"><Skeleton className="h-8 w-[40px]" /></TableCell>
+                                    <TableCell className="text-center"><Skeleton className="h-6 w-[60px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-[150px]" /></TableCell>
+                                    <TableCell className="text-center"><Skeleton className="h-4 w-[30px]" /></TableCell>
+                                    <TableCell className="text-center"><Skeleton className="h-4 w-[60px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-[200px]" /></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        );
+    }
+
     if (pedidos.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg bg-muted/10">
