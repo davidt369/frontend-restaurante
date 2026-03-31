@@ -98,15 +98,12 @@ export function ProductosPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="text-center py-4">Cargando productos...</div>
-            ) : (
-              <ProductosTable
-                productos={productos}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            )}
+            <ProductosTable
+              productos={productos}
+              isLoading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </CardContent>
         </Card>
 
