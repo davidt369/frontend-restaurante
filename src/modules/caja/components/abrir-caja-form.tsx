@@ -180,9 +180,11 @@ export function AbrirCajaForm({ onCajaOpened }: AbrirCajaFormProps) {
       await cajaService.abrirCaja(values);
       toast.success('Caja abierta exitosamente');
       onCajaOpened();
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al abrir la caja. Es posible que ya exista una abierta.');
+    } catch (error: unknown) {
+      // Extraer el mensaje real devuelto por el backend (409 Conflict, etc.)
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const mensajeServidor = axiosError?.response?.data?.message;
+      toast.error(mensajeServidor ?? 'Error al abrir la caja. Intenta nuevamente.');
     } finally {
       setIsSubmitting(false);
     }

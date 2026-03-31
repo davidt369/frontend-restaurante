@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { transaccionesService } from "../services/transacciones.service";
 import { cajaService } from "@/modules/caja/services/caja.service";
+import { useCocinaWebSocket } from "@/modules/cocina/hooks/use-cocina-websocket";
 import type {
     Transaccion,
     CreateTransaccionDto,
@@ -16,8 +17,11 @@ export function useTransaccionesPage() {
     // Data States
     const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
     const [loading, setLoading] = useState(true);
-    const [pedidosCocina, setPedidosCocina] = useState<Transaccion[]>([]);
-    const [loadingCocina, setLoadingCocina] = useState(false);
+    const {
+        pedidos: pedidosCocina,
+        loading: loadingCocina,
+        fetchPedidos: fetchPedidosCocina,
+    } = useCocinaWebSocket();
     const [cajaAbiertaId, setCajaAbiertaId] = useState<number | null>(null);
     const [pagos, setPagos] = useState<Pago[]>([]);
 
@@ -63,17 +67,6 @@ export function useTransaccionesPage() {
         }
     }, []);
 
-    const fetchPedidosCocina = useCallback(async () => {
-        try {
-            setLoadingCocina(true);
-            const data = await transaccionesService.getPendientesCocina();
-            setPedidosCocina(data);
-        } catch (error) {
-            console.error("Error al cargar pedidos de cocina:", error);
-        } finally {
-            setLoadingCocina(false);
-        }
-    }, []);
 
     // Effects
     useEffect(() => {
@@ -85,16 +78,6 @@ export function useTransaccionesPage() {
         return () => { mounted = false; };
     }, [fetchTransacciones]);
 
-    useEffect(() => {
-        let mounted = true;
-        const loadCocina = async () => {
-            if (mounted) {
-                await fetchPedidosCocina();
-            }
-        };
-        loadCocina();
-        return () => { mounted = false; };
-    }, [fetchPedidosCocina]);
 
     // Handlers
     const handleCreate = () => setUnifiedViewOpen(true);
@@ -141,6 +124,7 @@ export function useTransaccionesPage() {
                 toast.success("Transacción creada correctamente");
             }
             fetchTransacciones();
+            fetchPedidosCocina();
         } catch (error) {
             console.error(error);
             throw error;
@@ -194,6 +178,7 @@ export function useTransaccionesPage() {
             const updated = await transaccionesService.getOne(viewingTransaccion.id);
             setViewingTransaccion(updated);
             fetchTransacciones();
+            fetchPedidosCocina();
         } catch (error) {
             console.error(error);
             toast.error("Error al agregar item");
@@ -258,7 +243,9 @@ export function useTransaccionesPage() {
             setProcessingId(id);
             await transaccionesService.completarOrdenCocina(id);
             toast.success("Pedido marcado como terminado");
-            setPedidosCocina((prev) => prev.filter((p) => p.id !== id));
+            // No necesitamos filtrar localmente, el websocket se encargará de refrescar
+            // via el socket o la recarga global
+            fetchPedidosCocina();
             fetchTransacciones();
         } catch (error) {
             console.error("Error al completar pedido:", error);
