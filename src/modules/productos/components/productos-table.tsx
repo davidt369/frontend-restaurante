@@ -20,18 +20,52 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProductosTableProps {
   productos: Producto[];
+  isLoading: boolean;
   onEdit: (producto: Producto) => void;
   onDelete: (id: string) => void;
 }
 
 export function ProductosTable({
   productos,
+  isLoading,
   onEdit,
   onDelete,
 }: ProductosTableProps) {
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Precio (Bs)</TableHead>
+              <TableHead>Stock</TableHead>
+              <TableHead>Unidad</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="h-8 w-8 ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
