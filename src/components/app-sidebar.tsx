@@ -10,6 +10,7 @@ import {
   DollarSign,
   Receipt,
   ChefHat,
+  ExternalLink,
 } from "lucide-react"
 
 import {
@@ -38,6 +39,8 @@ interface NavItem {
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   allowedRoles: Rol[];
+  /** Si es true, abre en nueva pestaña usando <a> en lugar de <Link> */
+  newTab?: boolean;
 }
 
 const navigationItems: NavItem[] = [
@@ -88,6 +91,7 @@ const navigationItems: NavItem[] = [
     url: "/dashboard/cocina",
     icon: ChefHat,
     allowedRoles: ['admin', 'cajero'],
+    newTab: true,
   },
   {
     title: "Historial de Ventas",
@@ -161,43 +165,83 @@ export function AppSidebar() {
                         isActive && "bg-accent"
                       )}
                     >
-                      <Link
-                        to={item.url}
-                        className="flex items-center justify-between group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "flex items-center justify-center size-8 rounded-lg transition-colors",
-                              isActive
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted group-hover:bg-accent"
-                            )}
-                          >
-                            <Icon
+                      {item.newTab ? (
+                        // Cocina u otros items externos → nueva pestaña, no afecta el router
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
                               className={cn(
-                                "size-4",
-                                isActive && "text-primary-foreground"
+                                "flex items-center justify-center size-8 rounded-lg transition-colors",
+                                isActive
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted group-hover:bg-accent"
                               )}
-                            />
+                            >
+                              <Icon
+                                className={cn(
+                                  "size-4",
+                                  isActive && "text-primary-foreground"
+                                )}
+                              />
+                            </div>
+                            <span
+                              className={cn(
+                                "font-medium text-sm",
+                                isActive && "font-semibold"
+                              )}
+                            >
+                              {item.title}
+                            </span>
                           </div>
-                          <span
+                          <ExternalLink
+                            className="size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                          />
+                        </a>
+                      ) : (
+                        // Navegación interna → React Router
+                        <Link
+                          to={item.url}
+                          className="flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "flex items-center justify-center size-8 rounded-lg transition-colors",
+                                isActive
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted group-hover:bg-accent"
+                              )}
+                            >
+                              <Icon
+                                className={cn(
+                                  "size-4",
+                                  isActive && "text-primary-foreground"
+                                )}
+                              />
+                            </div>
+                            <span
+                              className={cn(
+                                "font-medium text-sm",
+                                isActive && "font-semibold"
+                              )}
+                            >
+                              {item.title}
+                            </span>
+                          </div>
+                          <ChevronRight
                             className={cn(
-                              "font-medium text-sm",
-                              isActive && "font-semibold"
+                              "size-3.5 text-muted-foreground transition-all opacity-0 -translate-x-1",
+                              isActive && "opacity-100 text-primary",
+                              "group-hover:opacity-100 group-hover:translate-x-0"
                             )}
-                          >
-                            {item.title}
-                          </span>
-                        </div>
-                        <ChevronRight
-                          className={cn(
-                            "size-3.5 text-muted-foreground transition-all opacity-0 -translate-x-1",
-                            isActive && "opacity-100 text-primary",
-                            "group-hover:opacity-100 group-hover:translate-x-0"
-                          )}
-                        />
-                      </Link>
+                          />
+                        </Link>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
