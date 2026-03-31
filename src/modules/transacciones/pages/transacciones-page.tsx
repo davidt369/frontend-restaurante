@@ -114,17 +114,14 @@ export function TransaccionesPage() {
 
                             {["pendiente", "abierto", "cerrado"].map((tab) => (
                                 <TabsContent key={tab} value={tab} className="mt-6">
-                                    {loading ? (
-                                        <div className="text-center py-8">Cargando ventas...</div>
-                                    ) : (
-                                        <TransaccionesTable
-                                            transacciones={filteredTransacciones(tab)}
-                                            onView={handleView}
-                                            onEdit={handleEdit}
-                                            onDelete={handleDelete}
-                                            onPay={handlePay}
-                                        />
-                                    )}
+                                    <TransaccionesTable
+                                        transacciones={filteredTransacciones(tab)}
+                                        isLoading={loading}
+                                        onView={handleView}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                        onPay={handlePay}
+                                    />
                                 </TabsContent>
                             ))}
 
@@ -138,17 +135,14 @@ export function TransaccionesPage() {
                             </TabsContent>
 
                             <TabsContent value="todos" className="mt-6">
-                                {loading ? (
-                                    <div className="text-center py-8">Cargando ventas...</div>
-                                ) : (
-                                    <TransaccionesTable
-                                        transacciones={filteredTransacciones("todos")}
-                                        onView={handleView}
-                                        onEdit={handleEdit}
-                                        onDelete={handleDelete}
-                                        onPay={handlePay}
-                                    />
-                                )}
+                                <TransaccionesTable
+                                    transacciones={filteredTransacciones("todos")}
+                                    isLoading={loading}
+                                    onView={handleView}
+                                    onEdit={handleEdit}
+                                    onDelete={handleDelete}
+                                    onPay={handlePay}
+                                />
                             </TabsContent>
                         </Tabs>
                     </CardContent>

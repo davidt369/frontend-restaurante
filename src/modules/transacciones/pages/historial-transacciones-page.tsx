@@ -46,6 +46,7 @@ import { toast } from "sonner";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { generateCajaReportPDF, generateGeneralReportPDF } from "@/modules/caja/services/pdf-report.service";
 
 interface ResumenItem {
@@ -397,10 +398,19 @@ export function HistorialTransaccionesPage() {
                             <FileText className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{cajas.length}</div>
-                            <p className="text-xs text-muted-foreground">
-                                {cajas.filter(c => c.cerrada).length} cerradas
-                            </p>
+                            {loading ? (
+                                <>
+                                    <Skeleton className="h-8 w-16 mb-1" />
+                                    <Skeleton className="h-3 w-24" />
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-2xl font-bold">{cajas.length}</div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {cajas.filter(c => c.cerrada).length} cerradas
+                                    </p>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                     <Card className="border-success/30 bg-success/5">
@@ -409,12 +419,21 @@ export function HistorialTransaccionesPage() {
                             <TrendingUp className="h-4 w-4 text-success" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-success">
-                                Bs {totalGeneral.ventas.toFixed(2)}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                {totalGeneral.count} ventas registradas
-                            </p>
+                            {loading ? (
+                                <>
+                                    <Skeleton className="h-8 w-24 mb-1" />
+                                    <Skeleton className="h-3 w-32" />
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-2xl font-bold text-success">
+                                        Bs {totalGeneral.ventas.toFixed(2)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {totalGeneral.count} ventas registradas
+                                    </p>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                     <Card className="border-destructive/30 bg-destructive/5">
@@ -423,12 +442,21 @@ export function HistorialTransaccionesPage() {
                             <ShoppingBag className="h-4 w-4 text-destructive" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-destructive">
-                                Bs {totalGeneral.gastos.toFixed(2)}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Egresos registrados
-                            </p>
+                            {loading ? (
+                                <>
+                                    <Skeleton className="h-8 w-24 mb-1" />
+                                    <Skeleton className="h-3 w-28" />
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-2xl font-bold text-destructive">
+                                        Bs {totalGeneral.gastos.toFixed(2)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Egresos registrados
+                                    </p>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                     <Card>
@@ -437,12 +465,21 @@ export function HistorialTransaccionesPage() {
                             <DollarSign className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
-                                Bs {totalGeneral.inicial.toFixed(2)}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                En todas las cajas
-                            </p>
+                            {loading ? (
+                                <>
+                                    <Skeleton className="h-8 w-24 mb-1" />
+                                    <Skeleton className="h-3 w-28" />
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-2xl font-bold">
+                                        Bs {totalGeneral.inicial.toFixed(2)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        En todas las cajas
+                                    </p>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -463,7 +500,28 @@ export function HistorialTransaccionesPage() {
                         {/* By Caja View */}
                         <TabsContent value="cajas" className="mt-6">
                         {loading ? (
-                            <div className="text-center py-10">Cargando historial...</div>
+                            <div className="space-y-4">
+                                {[1, 2, 3].map((i) => (
+                                    <Card key={i} className="overflow-hidden">
+                                        <div className="p-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <Skeleton className="h-12 w-12 rounded-lg" />
+                                                    <div className="space-y-2">
+                                                        <Skeleton className="h-5 w-[150px]" />
+                                                        <Skeleton className="h-4 w-[250px]" />
+                                                    </div>
+                                                </div>
+                                                <div className="hidden md:flex items-center gap-4">
+                                                    <Skeleton className="h-10 w-[80px]" />
+                                                    <Skeleton className="h-10 w-[80px]" />
+                                                    <Skeleton className="h-10 w-[80px]" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
                         ) : groupedByCaja.length === 0 ? (
                             <div className="text-center py-10 text-muted-foreground">
                                 No hay cajas registradas.
@@ -760,7 +818,31 @@ export function HistorialTransaccionesPage() {
                     {/* By Date View */}
                     <TabsContent value="fecha" className="mt-6">
                         {loading ? (
-                            <div className="text-center py-10">Cargando historial...</div>
+                            <div className="space-y-4">
+                                {[1, 2, 3].map((i) => (
+                                    <Card key={i}>
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Skeleton className="h-5 w-5" />
+                                                    <Skeleton className="h-6 w-[250px]" />
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <Skeleton className="h-4 w-[80px]" />
+                                                    <Skeleton className="h-8 w-[100px]" />
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-0">
+                                            <div className="p-4 space-y-2">
+                                                {[1, 2, 3].map((j) => (
+                                                    <Skeleton key={j} className="h-10 w-full" />
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
                         ) : groupedByFecha.length === 0 ? (
                             <div className="text-center py-10 text-muted-foreground">
                                 No hay ventas registradas.

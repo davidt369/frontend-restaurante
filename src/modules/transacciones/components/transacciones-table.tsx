@@ -20,11 +20,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Transaccion } from "../types/transaccion.types";
 import { formatDate, formatTime } from "@/utils/date-format";
 
 type TransaccionesTableProps = {
     transacciones: Transaccion[];
+    isLoading?: boolean;
     onView: (transaccion: Transaccion) => void;
     onEdit?: (transaccion: Transaccion) => void;
     onDelete?: (id: number) => void;
@@ -95,6 +97,7 @@ const getPendientesBadges = (montoPendiente: string, estadoCocina?: string) => {
 
 export function TransaccionesTable({
     transacciones,
+    isLoading = false,
     onView,
     onEdit,
     onDelete,
@@ -103,6 +106,47 @@ export function TransaccionesTable({
 }: TransaccionesTableProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [transaccionToDelete, setTransaccionToDelete] = useState<Transaccion | null>(null);
+
+    if (isLoading) {
+        return (
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-20">Nro.</TableHead>
+                            <TableHead className="w-25">Fecha</TableHead>
+                            <TableHead className="w-20">Hora</TableHead>
+                            <TableHead>Cliente</TableHead>
+                            <TableHead>Mesa</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="text-right">Pendiente</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Pendientes</TableHead>
+                            <TableHead className="text-right w-62.5">Acciones</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {[...Array(5)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-[90px]" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-[80px]" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-[90px]" /></TableCell>
+                                <TableCell className="text-right">
+                                    <Skeleton className="h-8 w-[120px] ml-auto" />
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        );
+    }
 
     const handleDeleteClick = (transaccion: Transaccion) => {
         setTransaccionToDelete(transaccion);
