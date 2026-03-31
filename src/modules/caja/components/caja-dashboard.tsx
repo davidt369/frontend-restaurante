@@ -8,7 +8,7 @@ import { cajaService } from '../services/caja.service';
 import { RegistrarGastoDialog } from './registrar-gasto-dialog';
 import { RegistrarConteoCard } from './registrar-conteo-card';
 import { format } from 'date-fns';
-import { ArrowDownCircle, ArrowUpCircle, Wallet, CreditCard, Lock, Eye, RefreshCw } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Wallet, CreditCard, RefreshCw, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { transaccionesService } from '../../transacciones/services/transacciones.service';
@@ -31,7 +31,7 @@ interface DineroValues {
 
 interface CajaDashboardProps {
   caja: CajaTurnoResponse;
-  onCerrarCajaClick: () => void;
+  onCajaCerrada: () => void;
   onRefreshCaja: () => void;
 }
 
@@ -87,17 +87,30 @@ function DashboardSkeleton() {
   );
 }
 
-export function CajaDashboard({ caja, onCerrarCajaClick, onRefreshCaja }: CajaDashboardProps) {
+export function CajaDashboard({ caja, onCajaCerrada, onRefreshCaja }: CajaDashboardProps) {
   const [resumen, setResumen] = useState<ResumenCierre | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [hasPendingOrders, setHasPendingOrders] = useState(false);
   const navigate = useNavigate();
 
   const fetchResumen = async () => {
     try {
       setLoading(true);
-      const data = await cajaService.obtenerResumenCierre();
+      const [data, transacciones] = await Promise.all([
+        cajaService.obtenerResumenCierre(),
+        transaccionesService.getByCaja(caja.id),
+      ]);
       setResumen(data);
+      // Verifica pedidos pendientes en tiempo real para habilitar/deshabilitar cierre
+      setHasPendingOrders(
+        transacciones.some(
+          t =>
+            t.estado === 'pendiente' ||
+            t.estado === 'abierto' ||
+            Number(t.monto_pendiente) > 0 ||
+            t.estado_cocina === 'pendiente',
+        ),
+      );
     } catch (error) {
       console.error('Error al cargar resumen', error);
     } finally {
@@ -109,28 +122,34 @@ export function CajaDashboard({ caja, onCerrarCajaClick, onRefreshCaja }: CajaDa
     fetchResumen();
   }, [caja.id]);
 
-  const handleCerrarCaja = async () => {
+  type CerrarCajaPayload = {
+    b200?: number; b100?: number; b50?: number; b20?: number; b10?: number;
+    b5?: number; m2?: number; m1?: number; m050?: number; m020?: number; m010?: number;
+    cierre_obs?: string;
+  };
+
+  const handleCerrarCaja = async (valores: CerrarCajaPayload) => {
     try {
-      setIsVerifying(true);
-      const transacciones = await transaccionesService.getByCaja(caja.id);
-      const hasPending = transacciones.some(t =>
-        t.estado === 'pendiente' ||
-        t.estado === 'abierto' ||
-        Number(t.monto_pendiente) > 0 ||
-        t.estado_cocina === 'pendiente'
-      );
-
-      if (hasPending) {
-        toast.error("Hay pedidos pendientes, abiertos, por pagar o en cocina. Termínelos antes de cerrar caja.");
-        return;
-      }
-
-      onCerrarCajaClick();
-    } catch (error) {
-      console.error('Error al validar caja:', error);
-      toast.error('Error al verificar pedidos pendientes.');
-    } finally {
-      setIsVerifying(false);
+      await cajaService.cerrarCaja({
+        b200: valores.b200 ?? 0,
+        b100: valores.b100 ?? 0,
+        b50: valores.b50 ?? 0,
+        b20: valores.b20 ?? 0,
+        b10: valores.b10 ?? 0,
+        b5: valores.b5 ?? 0,
+        m2: valores.m2 ?? 0,
+        m1: valores.m1 ?? 0,
+        m050: valores.m050 ?? 0,
+        m020: valores.m020 ?? 0,
+        m010: valores.m010 ?? 0,
+        cierre_obs: valores.cierre_obs,
+      });
+      onCajaCerrada();
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const msg = axiosError?.response?.data?.message ?? 'Error al cerrar la caja';
+      // Re-lanzamos para que el componente hijo lo maneje con toast
+      throw new Error(msg);
     }
   };
 
@@ -157,7 +176,7 @@ export function CajaDashboard({ caja, onCerrarCajaClick, onRefreshCaja }: CajaDa
 
   const { resumen: datos, gastos } = resumen;
 
-  const yaArqueado = 
+  const yaArqueado =
     caja.b200 !== null || caja.b100 !== null || caja.b50 !== null ||
     caja.b20 !== null || caja.b10 !== null || caja.b5 !== null ||
     caja.m2 !== null || caja.m1 !== null || caja.m050 !== null ||
@@ -192,18 +211,15 @@ export function CajaDashboard({ caja, onCerrarCajaClick, onRefreshCaja }: CajaDa
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <RegistrarGastoDialog onGastoRegistrado={fetchResumen} />
-          <Button variant="outline" onClick={fetchResumen} className="gap-2" disabled={loading}>
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            <span className="hidden sm:inline">Actualizar</span>
-          </Button>
           <Button variant="outline" onClick={() => navigate('/caja/reporte')} className="gap-2">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Reporte</span>
           </Button>
-          <Button variant="destructive" onClick={handleCerrarCaja} disabled={isVerifying} className="gap-2">
-            <Lock className="h-4 w-4" />
-            {isVerifying ? "Verificando..." : "Cerrar Caja"}
+          <Button variant="outline" onClick={fetchResumen} className="gap-2" disabled={loading}>
+            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+            <span className="hidden sm:inline">Actualizar</span>
           </Button>
+
         </div>
       </div>
 
@@ -233,12 +249,7 @@ export function CajaDashboard({ caja, onCerrarCajaClick, onRefreshCaja }: CajaDa
         />
       </div>
 
-      <RegistrarConteoCard
-        efectivoEsperado={datos.efectivo_esperado}
-        onGuardar={handleConteoGuardado}
-        valoresIniciales={valoresIniciales}
-        yaArqueado={yaArqueado}
-      />
+
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -313,6 +324,14 @@ export function CajaDashboard({ caja, onCerrarCajaClick, onRefreshCaja }: CajaDa
           </CardContent>
         </Card>
       </div>
+      <RegistrarConteoCard
+        efectivoEsperado={datos.efectivo_esperado}
+        onGuardar={handleConteoGuardado}
+        onCerrarCaja={handleCerrarCaja}
+        valoresIniciales={valoresIniciales}
+        yaArqueado={yaArqueado}
+        hasPendingOrders={hasPendingOrders}
+      />
     </div>
   );
 }

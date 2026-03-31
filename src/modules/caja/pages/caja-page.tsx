@@ -6,7 +6,6 @@ import { cajaService } from '../services/caja.service';
 import { type CajaTurnoResponse, type GastoCajaResponse } from '../types/caja.types';
 import { AbrirCajaForm } from '../components/abrir-caja-form';
 import { CajaDashboard } from '../components/caja-dashboard';
-import { CerrarCajaForm } from '../components/cerrar-caja-form';
 import { HistorialCajasTable } from '../components/historial-cajas-table';
 import { HistorialGastosTable } from '../components/historial-gastos-table';
 import { Archive, DollarSign, History, ChevronLeft, ChevronRight, Home } from 'lucide-react';
@@ -23,7 +22,6 @@ const tabsConfig = {
 
 export function CajaPage() {
   const [cajaAbierta, setCajaAbierta] = useState<CajaTurnoResponse | null>(null);
-  const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabValue>('gestion');
 
@@ -165,22 +163,14 @@ export function CajaPage() {
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
             <TabsContent value="gestion" className="space-y-4">
               {cajaAbierta ? (
-                isClosing ? (
-                  <CerrarCajaForm
-                    onCajaClosed={() => {
-                      setIsClosing(false);
-                      fetchEstadoCaja();
-                      loadHistory();
-                    }}
-                    onCancel={() => setIsClosing(false)}
-                  />
-                ) : (
-                  <CajaDashboard
-                    caja={cajaAbierta}
-                    onCerrarCajaClick={() => setIsClosing(true)}
-                    onRefreshCaja={fetchEstadoCaja}
-                  />
-                )
+                <CajaDashboard
+                  caja={cajaAbierta}
+                  onCajaCerrada={() => {
+                    fetchEstadoCaja();
+                    loadHistory();
+                  }}
+                  onRefreshCaja={fetchEstadoCaja}
+                />
               ) : (
                 <div className="flex flex-col items-center justify-center w-full py-2">
                   <div className="text-center space-y-2 mb-4">

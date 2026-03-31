@@ -10,10 +10,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
+
 import { toast } from 'sonner';
 import { cajaService } from '../services/caja.service';
 import { useState, useEffect } from 'react';
 import { History, Banknote, Coins, Info } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const abrirCajaSchema = z.object({
   b200: z.number().min(0).optional(),
@@ -104,7 +106,7 @@ export function AbrirCajaForm({ onCajaOpened }: AbrirCajaFormProps) {
         const historial = await cajaService.obtenerHistorial(1);
         if (mounted && historial && historial.length > 0) {
           const lastCaja = historial[0];
-          
+
           if (lastCaja.cerrada) {
             const detalle = await cajaService.obtenerDetalleCaja(lastCaja.id);
             setUltimoCierre({
@@ -194,53 +196,50 @@ export function AbrirCajaForm({ onCajaOpened }: AbrirCajaFormProps) {
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <History className="h-5 w-5 text-primary" />
-          <CardTitle>Apertura de Caja</CardTitle>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-base">Apertura de Caja</CardTitle>
+          </div>
         </div>
         <CardDescription>
-          Ingresa el conteo inicial de efectivo para abrir la caja.
+          Ingresa el conteo inicial de efectivo para iniciar el turno.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="space-y-5">
         {ultimoCierre && (
-          <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Último Cierre ({ultimoCierre.fecha})</span>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-primary/10 pb-2">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Último Cierre ({ultimoCierre.fecha})</span>
+              </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
-                <span className="text-muted-foreground">Ventas Efectivo:</span>
-                <p className="font-semibold text-success">Bs {ultimoCierre.ventas_efectivo.toFixed(2)}</p>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5">Ventas Electr.</span>
+                <p className="font-medium text-info">Bs {ultimoCierre.ventas_qr.toFixed(2)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Ventas QR:</span>
-                <p className="font-semibold text-info">Bs {ultimoCierre.ventas_qr.toFixed(2)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Gastos:</span>
-                <p className="font-semibold text-destructive">Bs {ultimoCierre.total_gastos.toFixed(2)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Fondo Inicial Anterior:</span>
-                <p className="font-semibold">Bs {ultimoCierre.monto_inicial.toFixed(2)}</p>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5">Gastos</span>
+                <p className="font-medium text-destructive">Bs {ultimoCierre.total_gastos.toFixed(2)}</p>
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <span className="text-muted-foreground">Efectivo Esperado:</span>
-                <p className="font-semibold text-primary">Bs {ultimoCierre.efectivo_esperado.toFixed(2)}</p>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-0.5 font-semibold text-primary">Efectivo Final Ant.</span>
+                <p className="font-bold text-primary text-base">Bs {ultimoCierre.efectivo_esperado.toFixed(2)}</p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <input
-                type="checkbox"
+
+            <div className="flex items-center gap-2 pt-2">
+              <Checkbox
                 id="apply-last-data"
                 checked={applyLastData}
-                onChange={(e) => {
-                  setApplyLastData(e.target.checked);
-                  if (e.target.checked && ultimoCierre) {
+                onCheckedChange={(checked) => {
+                  const isChecked = checked === true;
+                  setApplyLastData(isChecked);
+                  if (isChecked && ultimoCierre) {
                     form.reset({
                       b200: ultimoCierre.b200 || 0,
                       b100: ultimoCierre.b100 || 0,
@@ -261,37 +260,37 @@ export function AbrirCajaForm({ onCajaOpened }: AbrirCajaFormProps) {
                     });
                   }
                 }}
-                className="h-4 w-4"
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <label htmlFor="apply-last-data" className="text-sm">
-                Usar valores del último cierre como punto de partida
+              <label htmlFor="apply-last-data" className="text-sm cursor-pointer select-none text-muted-foreground font-medium">
+                Cargar valores del último cierre como fondo inicial
               </label>
             </div>
           </div>
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <Banknote className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Billetes</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Billetes</span>
                 </div>
                 <div className="space-y-2">
                   {BILLETES.map(({ key, label, valor }) => (
                     <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm">{label}</span>
-                      <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{label}</span>
+                      <div className="flex items-center gap-3">
                         <input
                           type="number"
                           min="0"
                           {...form.register(key as DineroKey, { valueAsNumber: true })}
-                          className="w-20 h-8 text-center border rounded-md bg-background"
+                          className="w-16 h-8 text-center border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           placeholder="0"
                         />
-                        <span className="text-xs text-muted-foreground w-20 text-right">
-                          Bs {((watchedValues[key] || 0) * valor).toFixed(2)}
+                        <span className="text-xs text-muted-foreground w-16 text-right tabular-nums">
+                          Bs {((watchedValues[key as DineroKey] || 0) * valor).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -300,25 +299,25 @@ export function AbrirCajaForm({ onCajaOpened }: AbrirCajaFormProps) {
               </div>
 
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <Coins className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Monedas</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Monedas</span>
                 </div>
                 <div className="space-y-2">
                   {MONEDAS.map(({ key, label, valor }) => (
                     <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm">{label}</span>
-                      <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{label}</span>
+                      <div className="flex items-center gap-3">
                         <input
                           type="number"
                           min="0"
                           step="0.01"
                           {...form.register(key as DineroKey, { valueAsNumber: true })}
-                          className="w-20 h-8 text-center border rounded-md bg-background"
+                          className="w-16 h-8 text-center border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           placeholder="0"
                         />
-                        <span className="text-xs text-muted-foreground w-20 text-right">
-                          Bs {((watchedValues[key] || 0) * valor).toFixed(2)}
+                        <span className="text-xs text-muted-foreground w-16 text-right tabular-nums">
+                          Bs {((watchedValues[key as DineroKey] || 0) * valor).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -327,20 +326,22 @@ export function AbrirCajaForm({ onCajaOpened }: AbrirCajaFormProps) {
               </div>
             </div>
 
-            <div className="bg-primary/10 rounded-lg p-4 text-center border border-primary/20">
-              <p className="text-sm font-medium text-muted-foreground">Total Inicial</p>
-              <p className="text-3xl font-bold text-primary">Bs {total.toFixed(2)}</p>
-              {ultimoCierre && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {ultimoCierre.efectivo_esperado > 0 
-                    ? `Último cierre: Bs ${ultimoCierre.efectivo_esperado.toFixed(2)}`
-                    : 'Sin datos de cierre anterior'}
+            <div className="p-4 rounded-lg border bg-muted/30 border-border text-center">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-muted-foreground">Fondo Inicial Total</span>
+              </div>
+              <p className="text-3xl font-bold tabular-nums">Bs {total.toFixed(2)}</p>
+              {ultimoCierre && applyLastData && (
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  {ultimoCierre.efectivo_esperado > 0
+                    ? `Diferencia de carga: -Bs ${Math.abs(total - ultimoCierre.efectivo_esperado).toFixed(2)}`
+                    : ''}
                 </p>
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting || loadingLast}>
-              {isSubmitting ? 'Abriendo caja...' : 'Confirmar Apertura'}
+            <Button type="submit" className="w-full gap-2 font-medium" disabled={isSubmitting || loadingLast} size="lg">
+              {isSubmitting ? 'Abriendo caja...' : 'Confirmar Apertura de Caja'}
             </Button>
           </form>
         </Form>

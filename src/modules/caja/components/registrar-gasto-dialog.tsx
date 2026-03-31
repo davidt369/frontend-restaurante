@@ -135,20 +135,13 @@ export function RegistrarGastoDialog({
               name="metodo_pago"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Método de Pago</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="efectivo">
-                        Efectivo (Caja Física)
-                      </SelectItem>
-                      {/* <SelectItem value="qr">QR / Transferencia</SelectItem> */}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Metodo de Pago (Efectivo)</FormLabel>
+                  <Input
+                    type="text"
+                    {...field}
+                    hidden
+                    value="efectivo"
+                  />
                   <FormMessage />
                 </FormItem>
               )}

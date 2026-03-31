@@ -101,15 +101,15 @@ const navigationItems: NavItem[] = [
   },
 ]
 
-const rolLabels: Record<Rol, string> = {
-  admin: 'Administrador',
-  cajero: 'Cajero',
-};
+// const rolLabels: Record<Rol, string> = {
+//   admin: 'Administrador',
+//   cajero: 'Cajero',
+// };
 
-const rolColors: Record<Rol, string> = {
-  admin: 'bg-destructive/10 text-destructive',
-  cajero: 'bg-info/10 text-info',
-};
+// const rolColors: Record<Rol, string> = {
+//   admin: 'bg-destructive/10 text-destructive',
+//   cajero: 'bg-info/10 text-info',
+// };
 
 export function AppSidebar() {
   const location = useLocation()
