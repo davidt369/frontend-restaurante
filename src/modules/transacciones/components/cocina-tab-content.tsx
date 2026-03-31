@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Timer, RefreshCw, CheckCircle, ChefHat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Transaccion } from "../types/transaccion.types";
@@ -49,7 +50,34 @@ export function CocinaTabContent({
     };
 
     if (loading) {
-        return <div className="text-center py-8">Cargando pedidos de cocina...</div>;
+        return (
+            <div className="rounded-md border overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-muted/50">
+                        <TableRow>
+                            <TableHead className="w-[100px]">Hora</TableHead>
+                            <TableHead className="w-[80px] text-center"># Items</TableHead>
+                            <TableHead className="w-[150px]">Mesa/Para</TableHead>
+                            <TableHead className="w-[80px]">Nro</TableHead>
+                            <TableHead>Detalle del Pedido</TableHead>
+                            <TableHead className="w-[120px] text-right">Acción</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {[...Array(4)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-10 w-[70px]" /></TableCell>
+                                <TableCell className="text-center"><Skeleton className="h-6 w-[30px]" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-[120px]" /></TableCell>
+                                <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
+                                <TableCell><Skeleton className="h-8 w-[200px]" /></TableCell>
+                                <TableCell className="text-right"><Skeleton className="h-10 w-[100px] ml-auto" /></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        );
     }
 
     if (pedidos.length === 0) {
