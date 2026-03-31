@@ -9,9 +9,11 @@ import {
 import { format, isValid } from "date-fns";
 import type { GastoCajaResponse } from "../types/caja.types";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface HistorialGastosTableProps {
   gastos: GastoCajaResponse[];
+  isLoading?: boolean;
 }
 
 const formatDateTime = (dateString: string | null) => {
@@ -29,7 +31,36 @@ const formatDateTime = (dateString: string | null) => {
   return dateString;
 }
 
-export function HistorialGastosTable({ gastos }: HistorialGastosTableProps) {
+export function HistorialGastosTable({ gastos, isLoading = false }: HistorialGastosTableProps) {
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Descripción</TableHead>
+              <TableHead>Método</TableHead>
+              <TableHead>Usuario</TableHead>
+              <TableHead className="text-right">Monto</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-[140px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-[80px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
   if (gastos.length === 0) {
     return <div className="text-center py-10 text-muted-foreground">No hay gastos registrados.</div>;
   }
