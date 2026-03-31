@@ -115,7 +115,7 @@ export function AppSidebar() {
 
   const userRole = (usuario?.rol?.toLowerCase() as Rol) || 'cajero';
 
-  const visibleItems = navigationItems.filter(item => 
+  const visibleItems = navigationItems.filter(item =>
     item.allowedRoles.includes(userRole)
   );
 
@@ -226,22 +226,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t">
         <div className="p-4 space-y-3">
-          <div className="px-3 py-2 rounded-lg bg-muted/50">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-muted-foreground">
-                Usuario
-              </span>
-              <Badge
-                variant="secondary"
-                className={cn("text-xs font-semibold h-5 px-1.5", rolColors[userRole] || 'bg-muted')}
-              >
-                {rolLabels[userRole] || usuario?.rol || 'Sin rol'}
-              </Badge>
-            </div>
-            <div className="text-[11px] text-foreground font-medium truncate">
-              {usuario?.nombre || 'Sin nombre'}
-            </div>
-          </div>
+
           <div className="px-3 py-2 rounded-lg bg-muted/30">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-medium text-muted-foreground">
