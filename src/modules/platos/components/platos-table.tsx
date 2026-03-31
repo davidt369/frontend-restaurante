@@ -25,9 +25,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PlatoIngrediente } from "../types/plato.types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PlatosTableProps {
   platos: Plato[];
+  isLoading: boolean;
   onEdit: (plato: Plato) => void;
   onDelete: (id: string) => void;
   onManageIngredientes?: (plato: Plato) => void;
@@ -35,10 +37,39 @@ interface PlatosTableProps {
 
 export function PlatosTable({
   platos,
+  isLoading,
   onEdit,
   onDelete,
   onManageIngredientes
 }: PlatosTableProps) {
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Ingredientes</TableHead>
+              <TableHead>Precio (Bs)</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="h-8 w-8 ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
   const IngredientsHover = ({ platoId }: { platoId: string }) => {
     const [ingredientes, setIngredientes] = useState<PlatoIngrediente[] | null>(null);
     const [loading, setLoading] = useState(false);
