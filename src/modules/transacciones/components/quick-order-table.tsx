@@ -17,6 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { productosService } from "@/modules/productos/services/productos.service";
 import { platosService } from "@/modules/platos/services/platos.service";
 import type { Producto } from "@/modules/productos/types/producto.types";
@@ -206,7 +207,45 @@ export function QuickOrderTable({ onSubmitItems, onCancel }: QuickOrderTableProp
     const validItemCount = rows.filter((row) => row.item_id).length;
 
     if (loading) {
-        return <div className="text-center py-8">Cargando...</div>;
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                        <Skeleton className="h-6 w-[250px]" />
+                        <Skeleton className="h-4 w-[350px]" />
+                    </div>
+                    <Skeleton className="h-9 w-[120px]" />
+                </div>
+                <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-muted/50">
+                                <TableHead className="w-[40px]">#</TableHead>
+                                <TableHead className="min-w-[300px]">Item (Producto/Plato)</TableHead>
+                                <TableHead className="w-[120px]">Cantidad</TableHead>
+                                <TableHead className="w-[120px]">Precio Unit.</TableHead>
+                                <TableHead className="w-[120px]">Subtotal</TableHead>
+                                <TableHead className="min-w-[200px]">Notas</TableHead>
+                                <TableHead className="w-[60px]"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {[1, 2, 3].map((i) => (
+                                <TableRow key={i}>
+                                    <TableCell><Skeleton className="h-4 w-[20px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-9 w-full" /></TableCell>
+                                    <TableCell><Skeleton className="h-9 w-full" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-9 w-full" /></TableCell>
+                                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        );
     }
 
     return (
