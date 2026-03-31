@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, isValid } from "date-fns";
 import { cajaService } from "../services/caja.service";
 import { transaccionesService } from "@/modules/transacciones/services/transacciones.service";
@@ -112,8 +113,21 @@ export function CajaDetallePage() {
     if (loading) {
         return (
             <DashboardLayout>
-                <div className="flex h-full items-center justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="container mx-auto py-6 space-y-6">
+                    <div className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-8 w-[200px]" />
+                            <Skeleton className="h-4 w-[300px]" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-10 w-[450px]" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Skeleton className="h-48" />
+                        <Skeleton className="h-48" />
+                    </div>
+                    <Skeleton className="h-32" />
+                    <Skeleton className="h-64" />
                 </div>
             </DashboardLayout>
         );
