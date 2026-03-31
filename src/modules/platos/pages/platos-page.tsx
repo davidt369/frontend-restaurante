@@ -100,16 +100,13 @@ export function PlatosPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="text-center py-4">Cargando platos...</div>
-            ) : (
-              <PlatosTable
-                platos={platos}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onManageIngredientes={handleManageIngredientes}
-              />
-            )}
+            <PlatosTable
+              platos={platos}
+              isLoading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onManageIngredientes={handleManageIngredientes}
+            />
           </CardContent>
         </Card>
 
