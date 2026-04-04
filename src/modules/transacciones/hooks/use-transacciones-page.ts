@@ -94,6 +94,7 @@ export function useTransaccionesPage() {
             await transaccionesService.delete(id);
             toast.success("Transacción eliminada correctamente");
             fetchTransacciones();
+            fetchPedidosCocina();
         } catch (error) {
             console.error(error);
             toast.error("Error al eliminar transacción");
