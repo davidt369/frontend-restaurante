@@ -16,10 +16,12 @@ export function PdfPreviewDialog({ open, onOpenChange, data, onDownload }: PdfPr
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!open) {
+        if (open && data) {
+            handlePreview();
+        } else if (!open) {
             setPdfUrl(null);
         }
-    }, [open]);
+    }, [open, data]);
 
     const handlePreview = async () => {
         if (!data) return;

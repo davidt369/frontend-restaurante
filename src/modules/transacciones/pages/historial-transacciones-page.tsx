@@ -224,7 +224,7 @@ export function HistorialTransaccionesPage() {
 
         return Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(date => {
             const items = groups[date];
-            const totalDia = items.reduce((sum, t) => sum + parseFloat(t.monto_total), 0);
+            const totalDia = items.reduce((sum, t) => sum + (parseFloat(t.monto_total) || 0), 0);
             return {
                 date,
                 items,
@@ -239,6 +239,42 @@ export function HistorialTransaccionesPage() {
             ...prev,
             [cajaId]: !prev[cajaId]
         }));
+    };
+
+    const handleExportDailyPDF = (dateStr: string) => {
+        try {
+            // Find all cajas for this date
+            const sameDayCajas = groupedByCaja.filter(g => {
+                const cajaDate = g.caja.fecha.split('T')[0];
+                return cajaDate === dateStr;
+            });
+
+            if (sameDayCajas.length === 0) {
+                toast.error("No hay datos de caja para este día");
+                return;
+            }
+
+            const reportData: ReporteCajaData[] = sameDayCajas.map(g => ({
+                caja: g.caja,
+                ventas: g.ventas,
+                itemsEliminados: g.ventas
+                    .filter(v => !!v.borrado_en)
+                    .flatMap(v => v.items?.map(it => ({
+                        ...it,
+                        transaccion_nro: v.nro_reg,
+                        borrado_en: v.borrado_en
+                    })) || []),
+                gastos: g.gastos,
+                resumen: g.resumen,
+                items: g.itemsMasVendidos
+            }));
+
+            generateGeneralReportPDF(reportData, dateStr, dateStr);
+            toast.success(`Reporte de ${dateStr} generado`);
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al generar el reporte");
+        }
     };
 
     const handleView = (transaccion: Transaccion) => {
@@ -258,18 +294,40 @@ export function HistorialTransaccionesPage() {
         }
     };
 
-    const formatTime = (dateStr: string | null | undefined): string => {
+    // Helper para formatear horas de forma robusta
+    const formatTime = (dateStr: any): string => {
         if (!dateStr) return "N/A";
-        const date = new Date(dateStr);
-        if (!isValid(date)) return "N/A";
-        return format(date, "HH:mm");
+        try {
+            const date = new Date(dateStr);
+            if (!isValid(date)) {
+                // Intento fallido, probar corregir formato si es un string con espacio
+                if (typeof dateStr === 'string' && dateStr.includes(' ')) {
+                    const isoDate = new Date(dateStr.replace(' ', 'T'));
+                    if (isValid(isoDate)) return format(isoDate, "HH:mm");
+                }
+                return "N/A";
+            }
+            return format(date, "HH:mm");
+        } catch {
+            return "N/A";
+        }
     };
 
-    const safeFormatDateTime = (dateStr?: string | null): string => {
+    const safeFormatDateTime = (dateStr?: any, fmt = "dd/MM/yyyy HH:mm"): string => {
         if (!dateStr) return "N/A";
-        const date = new Date(dateStr);
-        if (!isValid(date)) return "N/A";
-        return format(date, "dd/MM/yyyy HH:mm");
+        try {
+            const date = new Date(dateStr);
+            if (!isValid(date)) {
+                if (typeof dateStr === 'string' && dateStr.includes(' ')) {
+                    const isoDate = new Date(dateStr.replace(' ', 'T'));
+                    if (isValid(isoDate)) return format(isoDate, fmt);
+                }
+                return "N/A";
+            }
+            return format(date, fmt);
+        } catch {
+            return "N/A";
+        }
     };
 
     const handleExportPDF = async (cajaId?: number) => {
@@ -277,6 +335,13 @@ export function HistorialTransaccionesPage() {
             if (cajaId) {
                 const cajaGroup = groupedByCaja.find(c => c.caja.id === cajaId);
                 if (cajaGroup) {
+                    toast.loading("Generando datos del reporte...", { id: "report-load" });
+                    
+                    const [itemsEliminados, ventasDetalladas] = await Promise.all([
+                        transaccionesService.getItemsEliminados(cajaId).catch(() => []),
+                        transaccionesService.getVentasDetalladas(cajaId).catch(() => []),
+                    ]);
+
                     const pdfData: ReporteCajaData = {
                         caja: {
                             id: cajaGroup.caja.id,
@@ -285,7 +350,7 @@ export function HistorialTransaccionesPage() {
                             hora_cierre: cajaGroup.caja.hora_cierre,
                             monto_inicial: cajaGroup.caja.monto_inicial,
                             cerrada: cajaGroup.caja.cerrada,
-                            usuario_nombre: "Usuario",
+                            usuario_nombre: cajaGroup.caja.usuario_id || "Cajero", // Idealmente jalar nombre
                             b200: cajaGroup.caja.b200,
                             b100: cajaGroup.caja.b100,
                             b50: cajaGroup.caja.b50,
@@ -303,8 +368,11 @@ export function HistorialTransaccionesPage() {
                         gastos: cajaGroup.gastos,
                         itemsMasVendidos: cajaGroup.itemsMasVendidos,
                         ventasPorMesa: cajaGroup.ventasPorMesa,
+                        itemsEliminados,
+                        ventasDetalladas,
                     };
                     
+                    toast.dismiss("report-load");
                     setPdfPreviewData(pdfData);
                     setPdfPreviewOpen(true);
                 }
@@ -860,12 +928,23 @@ export function HistorialTransaccionesPage() {
                                                     </CardTitle>
                                                 </div>
                                                 <div className="flex items-center gap-4">
-                                                    <span className="text-sm text-muted-foreground">
-                                                        {group.count} ventas
-                                                    </span>
-                                                    <span className="font-bold text-success bg-success/10 px-3 py-1 rounded-full">
-                                                        Bs {group.total.toFixed(2)}
-                                                    </span>
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-sm font-semibold text-success">
+                                                            Bs {group.total.toFixed(2)}
+                                                        </span>
+                                                        <span className="text-[10px] text-muted-foreground">
+                                                            {group.count} ventas
+                                                        </span>
+                                                    </div>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        onClick={() => handleExportDailyPDF(group.date)}
+                                                        className="h-8 gap-1 border-primary/20 text-primary hover:bg-primary/5"
+                                                    >
+                                                        <Printer className="h-3 w-3" />
+                                                        <span className="text-xs">Reporte PDF</span>
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </CardHeader>

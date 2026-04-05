@@ -20,6 +20,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Transaccion } from "../types/transaccion.types";
 import { formatDate, formatTime } from "@/utils/date-format";
@@ -55,6 +56,13 @@ const getEstadoBadge = (estado: string) => {
                 <Badge variant="outline" className="gap-1 text-success border-success">
                     <CheckCircle2 className="h-3 w-3" />
                     Cerrado
+                </Badge>
+            );
+        case "eliminado":
+            return (
+                <Badge variant="destructive" className="gap-1">
+                    <Trash2 className="h-3 w-3" />
+                    Eliminado
                 </Badge>
             );
         default:
@@ -191,10 +199,14 @@ export function TransaccionesTable({
                                 const montoPendiente = parseFloat(transaccion.monto_pendiente);
                                 const isPagado = !isNaN(montoPendiente) && montoPendiente === 0;
                                 const isCerrado = transaccion.estado === "cerrado";
+                                const isEliminado = !!transaccion.borrado_en;
 
                                 return (
-                                    <TableRow key={transaccion.id}>
-                                        <TableCell className="font-medium">
+                                    <TableRow 
+                                        key={transaccion.id}
+                                        className={cn(isEliminado && "opacity-60 bg-destructive/5")}
+                                    >
+                                        <TableCell className={cn("font-medium", isEliminado && "line-through")}>
                                             #{transaccion.nro_reg}
                                         </TableCell>
                                         <TableCell>
@@ -232,7 +244,7 @@ export function TransaccionesTable({
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            {getEstadoBadge(transaccion.estado)}
+                                            {isEliminado ? getEstadoBadge("eliminado") : getEstadoBadge(transaccion.estado)}
                                         </TableCell>
                                         <TableCell>
                                             {getPendientesBadges(transaccion.monto_pendiente, transaccion.estado_cocina)}
@@ -248,7 +260,7 @@ export function TransaccionesTable({
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
 
-                                                {!readOnly && (
+                                                {!readOnly && !isEliminado && (
                                                     <>
                                                         {!isPagado && !isCerrado && onPay && (
                                                             <Button

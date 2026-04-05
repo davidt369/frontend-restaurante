@@ -10,6 +10,7 @@ export interface ResumenItem {
   cantidad: number;
   total: number;
   tipo: 'producto' | 'plato';
+  precio_unitario?: number;
 }
 
 export interface ReporteCajaData {
@@ -53,70 +54,62 @@ export interface ReporteCajaData {
   ventas: Transaccion[];
   gastos: GastoCajaResponse[];
   itemsMasVendidos?: ResumenItem[];
+  itemsEliminados?: any[];
   ventasPorMesa?: { mesa: string; cantidad: number; total: number }[];
-  ventasDetalladas?: (Transaccion & { items: DetalleItem[]; pagos: Pago[] })[];
+  ventasDetalladas?: (Transaccion & { items?: DetalleItem[]; pagos: Pago[]; usuario_nombre?: string })[];
+  items?: ResumenItem[];
 }
 
-const BILLETES = [
-  { key: 'b200', label: 'Bs 200', valor: 200 },
-  { key: 'b100', label: 'Bs 100', valor: 100 },
-  { key: 'b50', label: 'Bs 50', valor: 50 },
-  { key: 'b20', label: 'Bs 20', valor: 20 },
-  { key: 'b10', label: 'Bs 10', valor: 10 },
-  { key: 'b5', label: 'Bs 5', valor: 5 },
-];
-
-const MONEDAS = [
-  { key: 'm2', label: 'Bs 2', valor: 2 },
-  { key: 'm1', label: 'Bs 1', valor: 1 },
-  { key: 'm050', label: 'Bs 0.50', valor: 0.5 },
-  { key: 'm020', label: 'Bs 0.20', valor: 0.2 },
-  { key: 'm010', label: 'Bs 0.10', valor: 0.1 },
-];
-
-function formatTime(dateStr: string | null | undefined): string {
+function formatTime(dateStr: any): string {
   if (!dateStr) return "N/A";
-  const date = new Date(dateStr);
-  if (!isValid(date)) return "N/A";
-  return format(date, "HH:mm");
+  try {
+    const date = new Date(dateStr);
+    if (!isValid(date)) {
+      if (typeof dateStr === 'string' && dateStr.includes(' ')) {
+        const isoDate = new Date(dateStr.replace(' ', 'T'));
+        if (isValid(isoDate)) return format(isoDate, "HH:mm:ss");
+      }
+      return "N/A";
+    }
+    return format(date, "HH:mm:ss");
+  } catch {
+    return "N/A";
+  }
 }
 
-function safeFormatDateTime(dateStr?: string | null, fmt = "dd/MM HH:mm"): string {
+function safeFormatDateTime(dateStr?: any, fmt = "dd/MM HH:mm"): string {
   if (!dateStr) return "N/A";
-  const date = new Date(dateStr);
-  if (!isValid(date)) return "N/A";
-  return format(date, fmt);
-}
-
-function getBilletesMonedas(caja: ReporteCajaData['caja']) {
-  const billetes = BILLETES.map(b => ({
-    label: b.label,
-    valor: b.valor,
-    cantidad: caja[b.key as keyof typeof caja] as number | null,
-  })).filter(b => b.cantidad && b.cantidad > 0);
-
-  const monedas = MONEDAS.map(m => ({
-    label: m.label,
-    valor: m.valor,
-    cantidad: caja[m.key as keyof typeof caja] as number | null,
-  })).filter(m => m.cantidad && m.cantidad > 0);
-
-  return { billetes, monedas };
+  try {
+    const date = new Date(dateStr);
+    if (!isValid(date)) {
+      if (typeof dateStr === 'string' && dateStr.includes(' ')) {
+        const isoDate = new Date(dateStr.replace(' ', 'T'));
+        if (isValid(isoDate)) return format(isoDate, fmt);
+      }
+      return "N/A";
+    }
+    return format(date, fmt);
+  } catch {
+    return "N/A";
+  }
 }
 
 function addPageFooter(doc: jsPDF, pageWidth: number, pageCount: number): void {
   const footerY = 285;
+  const slate600: [number, number, number] = [71, 85, 105];
+  
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     
-    doc.setFillColor(26, 54, 93);
-    doc.rect(0, footerY, pageWidth, 12, "F");
+    // Divider line
+    doc.setDrawColor(226, 232, 240);
+    doc.line(15, footerY - 5, pageWidth - 15, footerY - 5);
     
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(...slate600);
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text("Documento generado automaticamente - Sistema Restaurante V2", pageWidth / 2, footerY + 4, { align: "center" });
-    doc.text(`Pagina ${i} de ${pageCount}  |  Generado: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`, pageWidth / 2, footerY + 9, { align: "center" });
+    doc.text("Este documento es un reporte oficial del Sistema de Gestión Restaurante V2.", pageWidth / 2, footerY, { align: "center" });
+    doc.text(`Página ${i} de ${pageCount}  |  Generado: ${format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es })}`, pageWidth / 2, footerY + 4, { align: "center" });
   }
 }
 
@@ -134,32 +127,41 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
   const marginRight = pageWidth - 15;
   const contentWidth = pageWidth - 30;
   
-  const primaryColor: [number, number, number] = [26, 54, 93];
-  const secondaryColor: [number, number, number] = [51, 51, 51];
-  const successColor: [number, number, number] = [0, 123, 86];
-  const dangerColor: [number, number, number] = [200, 50, 50];
-  const warningColor: [number, number, number] = [200, 140, 0];
-  const lightGray: [number, number, number] = [245, 245, 245];
-  const infoColor: [number, number, number] = [0, 123, 181];
-  const purpleColor: [number, number, number] = [128, 90, 213];
+  const primaryColor: [number, number, number] = [30, 41, 59]; // Slate 800 - Pro / Business
+  const secondaryColor: [number, number, number] = [51, 65, 85]; // Slate 600
+  const successColor: [number, number, number] = [21, 128, 61]; // Green 700
+  const dangerColor: [number, number, number] = [185, 28, 28]; // Red 700
+  const warningColor: [number, number, number] = [161, 98, 7]; // Yellow 700
+  const lightGray: [number, number, number] = [248, 250, 252]; // Slate 50
+  const infoColor: [number, number, number] = [29, 78, 216]; // Blue 700
+  const purpleColor: [number, number, number] = [107, 33, 168]; // Purple 700
 
   // ========== HEADER ==========
+  // Background stripe
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 45, "F");
+  doc.rect(0, 0, pageWidth, 40, "F");
   
+  // Title
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("REPORTE DE CAJA", pageWidth / 2, 16, { align: "center" });
+  doc.text("REPORTE GERENCIAL DE CAJA", marginLeft, 18);
   
+  // Company Info (Right)
   doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("Restaurante V2", pageWidth / 2, 26, { align: "center" });
-  
-  doc.setFontSize(8);
+  doc.text("RESTAURANTE V2", pageWidth - marginLeft, 18, { align: "right" });
+  doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.text("Sistema de Gestion Integral | Oruro, Bolivia", pageWidth / 2, 34, { align: "center" });
-  doc.text(`Caja #${data.caja.id}  |  ${data.caja.fecha}`, pageWidth / 2, 41, { align: "center" });
+  doc.text("Gestión Administrativa y Financiera", pageWidth - marginLeft, 23, { align: "right" });
+  doc.text("Oruro - Bolivia", pageWidth - marginLeft, 27, { align: "right" });
+  
+  // Sub-header info
+  doc.setFillColor(...secondaryColor);
+  doc.rect(0, 40, pageWidth, 8, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7);
+  doc.text(`CONTROL: ${data.caja.fecha}  |  CAJERO(A): ${data.caja.usuario_nombre || 'SISTEMA'}`, marginLeft, 45.5);
+  doc.text(`EMISIÓN: ${format(new Date(), "dd/MM/yyyy HH:mm:ss")}`, pageWidth - marginLeft, 45.5, { align: "right" });
 
   // ========== INFO BOX ==========
   let currentY = 52;
@@ -172,17 +174,16 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
   const labelCol1 = 20;
   const labelCol2 = 70;
   const labelCol3 = 125;
-  const valueOffset = 38;
   
   doc.setFont("helvetica", "bold");
   doc.text("Hora Apertura:", labelCol1, currentY + 8);
-  doc.text("Hora Cierre:", labelCol2, currentY + 8);
-  doc.text("Cajero:", labelCol3, currentY + 8);
+  doc.text("Hora Cierre:", labelCol2 + 5, currentY + 8);
+  doc.text("Cajero:", labelCol3 + 15, currentY + 8);
   
   doc.setFont("helvetica", "normal");
-  doc.text(formatTime(data.caja.hora_apertura), labelCol1 + valueOffset, currentY + 8);
-  doc.text(formatTime(data.caja.hora_cierre) || "En curso", labelCol2 + valueOffset, currentY + 8);
-  doc.text(data.caja.usuario_nombre || "N/A", labelCol3 + 20, currentY + 8);
+  doc.text(formatTime(data.caja.hora_apertura), labelCol1 + 25, currentY + 8);
+  doc.text(data.caja.hora_cierre ? formatTime(data.caja.hora_cierre) : "ABIERTA (En curso)", labelCol2 + 25, currentY + 8);
+  doc.text(data.caja.usuario_nombre || "N/A", labelCol3 + 30, currentY + 8);
   
   const isCerrada = data.caja.cerrada === true;
   const estadoColor = isCerrada ? successColor : warningColor;
@@ -190,9 +191,9 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
   doc.setFont("helvetica", "bold");
   doc.text("Estado:", labelCol1, currentY + 17);
   doc.setFillColor(...estadoColor);
-  doc.roundedRect(labelCol1 + 22, currentY + 11, 35, 7, 2, 2, "F");
+  doc.roundedRect(labelCol1 + 25, currentY + 11, 45, 7, 2, 2, "F");
   doc.setTextColor(255, 255, 255);
-  doc.text(isCerrada ? "CERRADA" : "ABIERTA", labelCol1 + 24, currentY + 16);
+  doc.text(isCerrada ? "CERRADA COMPLETADA" : "¡CAJA ABIERTA!", labelCol1 + 27, currentY + 16);
 
   // ========== RESUMEN GENERAL ==========
   currentY += 30;
@@ -286,62 +287,9 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
   doc.setFontSize(10);
   doc.text(`Bs ${data.resumen.ventas_qr.toFixed(2)}`, marginLeft + methodBoxWidth + 7, currentY + 14);
 
-  // ========== APERTURA ==========
-  currentY += 26;
-  currentY = checkNewPage(doc, currentY, 70);
-  
-  doc.setFillColor(...primaryColor);
-  doc.roundedRect(marginLeft, currentY - 3, contentWidth, 8, 2, 2, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.text("APERTURA DE CAJA", marginLeft + 2, currentY + 2);
-  
-  currentY += 8;
-  
-  const { billetes: aperturaBilletes, monedas: aperturaMonedas } = getBilletesMonedas(data.caja);
-  
-  if (aperturaBilletes.length > 0 || aperturaMonedas.length > 0) {
-    const detailData: string[][] = [];
-    
-    if (aperturaBilletes.length > 0) {
-      aperturaBilletes.forEach((b: { label: string; valor: number; cantidad: number | null }) => {
-        const subtotal = b.cantidad! * b.valor;
-        detailData.push([b.label, `${b.cantidad}`, `x`, `Bs ${b.valor}`, `=`, `Bs ${subtotal.toFixed(2)}`]);
-      });
-    }
-    
-    if (aperturaMonedas.length > 0) {
-      aperturaMonedas.forEach((m: { label: string; valor: number; cantidad: number | null }) => {
-        const subtotal = m.cantidad! * m.valor;
-        detailData.push([m.label, `${m.cantidad}`, `x`, `Bs ${m.valor}`, `=`, `Bs ${subtotal.toFixed(2)}`]);
-      });
-    }
-    
-    autoTable(doc, {
-      startY: currentY,
-      head: [["Denominacion", "Cant.", "", "Valor Unit.", "", "Subtotal"]],
-      body: detailData,
-      theme: "striped",
-      headStyles: { fillColor: primaryColor, fontSize: 7, fontStyle: "bold", halign: "center" },
-      bodyStyles: { fontSize: 7 },
-      tableWidth: 'auto',
-      columnStyles: {
-        0: { cellWidth: 28 },
-        1: { halign: "center", cellWidth: 18 },
-        2: { halign: "center", cellWidth: 8 },
-        3: { halign: "right", cellWidth: 25 },
-        4: { halign: "center", cellWidth: 8 },
-        5: { halign: "right", cellWidth: 28 },
-      },
-      margin: { left: marginLeft, right: marginRight - marginLeft },
-    });
-    
-    currentY = (doc.lastAutoTable?.finalY ?? 0) + 8;
-  }
-
   // ========== PRODUCTOS MAS VENDIDOS ==========
   if (data.itemsMasVendidos && data.itemsMasVendidos.length > 0) {
+    currentY += 26;
     currentY = checkNewPage(doc, currentY, 70);
     
     doc.setFillColor(...purpleColor);
@@ -368,7 +316,6 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
       theme: "striped",
       headStyles: { fillColor: purpleColor, fontSize: 7, fontStyle: "bold", halign: "center" },
       bodyStyles: { fontSize: 7 },
-      tableWidth: 'auto',
       columnStyles: {
         0: { halign: "center", cellWidth: 12 },
         1: { halign: "center", cellWidth: 25 },
@@ -382,44 +329,45 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
     currentY = (doc.lastAutoTable?.finalY ?? 0) + 8;
   }
 
-  // ========== VENTAS POR MESA ==========
-  if (data.ventasPorMesa && data.ventasPorMesa.length > 0) {
-    currentY = checkNewPage(doc, currentY, 70);
-    
-    doc.setFillColor(...infoColor);
+  // ========== GÉNEROS Y PRODUCTOS VENDIDOS ==========
+  if (data.items && data.items.length > 0) {
+    currentY = checkNewPage(doc, currentY, 60);
+    doc.setFillColor(...primaryColor);
     doc.roundedRect(marginLeft, currentY - 3, contentWidth, 8, 2, 2, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("VENTAS POR MESA / UBICACION", marginLeft + 2, currentY + 2);
-    
+    doc.text("GÉNEROS Y PRODUCTOS VENDIDOS", marginLeft + 2, currentY + 2);
     currentY += 8;
-    
-    const mesaData = data.ventasPorMesa.map((m, idx) => [
-      `${idx + 1}`,
-      m.mesa || 'Sin especificar',
-      m.cantidad.toString(),
-      `Bs ${m.total.toFixed(2)}`,
-    ]);
-    
+
+    const itemsData = data.items
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .map(item => [
+        item.nombre,
+        item.tipo === 'producto' ? 'PRODUCTO' : 'PLATO',
+        item.cantidad,
+        `Bs ${parseFloat((item.precio_unitario || (item.total / item.cantidad)).toString()).toFixed(2)}`,
+        `Bs ${parseFloat(item.total.toString()).toFixed(2)}`
+      ]);
+
     autoTable(doc, {
       startY: currentY,
-      head: [["#", "Mesa/Ubicacion", "Ventas", "Total"]],
-      body: mesaData,
-      theme: "striped",
-      headStyles: { fillColor: infoColor, fontSize: 7, fontStyle: "bold", halign: "center" },
-      bodyStyles: { fontSize: 7 },
-      tableWidth: 'auto',
+      head: [["Descripción del Ítem", "Categoría", "Cant.", "P. Unit", "Subtotal"]],
+      body: itemsData,
+      theme: "grid",
+      headStyles: { fillColor: [71, 85, 105], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
       columnStyles: {
-        0: { halign: "center", cellWidth: 15 },
-        1: { cellWidth: 85 },
-        2: { halign: "center", cellWidth: 35 },
-        3: { halign: "right", cellWidth: 40 },
+        0: { cellWidth: 80 },
+        1: { cellWidth: 25, halign: 'center' },
+        2: { cellWidth: 15, halign: 'center' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 30, halign: 'right' },
       },
       margin: { left: marginLeft, right: marginRight - marginLeft },
     });
     
-    currentY = (doc.lastAutoTable?.finalY ?? 0) + 8;
+    currentY = (doc.lastAutoTable?.finalY ?? 0) + 12;
   }
 
   // ========== DETALLE DE VENTAS ==========
@@ -434,44 +382,219 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
   
   currentY += 8;
   
-  if (data.ventas.length > 0) {
-    const ventasData = data.ventas.map(s => [
-      `#${s.nro_reg}`,
-      s.fecha?.split('T')[0] || '',
-      formatTime(s.hora || null),
-      s.mesa || '-',
-      s.concepto || '-',
-      `Bs ${parseFloat(s.monto_total).toFixed(2)}`,
-      s.estado === 'cerrado' ? 'OK' : (s.estado === 'abierto' ? '--' : '..'),
-    ]);
+  if (data.ventasDetalladas && data.ventasDetalladas.length > 0) {
+    const detailedVentasData = data.ventasDetalladas.map(v => {
+      const pagoEfectivo = v.pagos
+        .filter(p => p.metodo_pago === 'efectivo')
+        .reduce((sum, p) => sum + parseFloat(p.monto), 0);
+      const pagoQR = v.pagos
+        .filter(p => p.metodo_pago === 'qr')
+        .reduce((sum, p) => sum + parseFloat(p.monto), 0);
+
+      return [
+        `#${v.nro_reg}`,
+        formatTime(v.hora),
+        v.usuario_nombre || '-',
+        v.mesa || v.cliente || '-',
+        `Bs ${parseFloat(v.monto_total).toFixed(2)}`,
+        `Bs ${pagoEfectivo.toFixed(2)}`,
+        `Bs ${pagoQR.toFixed(2)}`,
+        v.estado === 'cerrado' ? 'OK' : 'PEND'
+      ];
+    });
     
     autoTable(doc, {
       startY: currentY,
-      head: [["#", "Fecha", "Hora", "Mesa", "Concepto", "Monto", "Est."]],
-      body: ventasData,
+      head: [["#", "Hora", "Cajero", "Ref/Mesa", "Total", "Efec.", "QR", "Est."]],
+      body: detailedVentasData,
       theme: "striped",
       headStyles: { fillColor: primaryColor, fontSize: 6, fontStyle: "bold", halign: "center" },
       bodyStyles: { fontSize: 6 },
-      tableWidth: 'auto',
       columnStyles: {
-        0: { halign: "center", cellWidth: 14 },
-        1: { halign: "center", cellWidth: 22 },
-        2: { halign: "center", cellWidth: 15 },
-        3: { halign: "center", cellWidth: 20 },
-        4: { cellWidth: 55 },
-        5: { halign: "right", cellWidth: 25 },
-        6: { halign: "center", cellWidth: 14 },
+        0: { halign: "center", cellWidth: 12 },
+        1: { halign: "center", cellWidth: 15 },
+        2: { cellWidth: 35 },
+        3: { cellWidth: 35 },
+        4: { halign: "right", fontStyle: "bold", cellWidth: 22 },
+        5: { halign: "right", cellWidth: 22 },
+        6: { halign: "right", cellWidth: 22 },
+        7: { halign: "center", cellWidth: 12 },
       },
       margin: { left: marginLeft, right: marginRight - marginLeft },
     });
     
     currentY = (doc.lastAutoTable?.finalY ?? 0) + 8;
-  } else {
-    doc.setTextColor(...secondaryColor);
+  }
+
+  // ========== DETALLE DE VENTAS DETALLADO (EFECTIVO vs QR) ==========
+  if (data.ventasDetalladas && data.ventasDetalladas.length > 0) {
+    const ventasEfectivo = data.ventasDetalladas.filter(v => 
+      v.pagos.some(p => p.metodo_pago === 'efectivo' && parseFloat(p.monto.toString()) > 0)
+    );
+    const ventasQR = data.ventasDetalladas.filter(v => 
+      v.pagos.some(p => p.metodo_pago === 'qr' && parseFloat(p.monto.toString()) > 0)
+    );
+
+    // Tabla Efectivo
+    if (ventasEfectivo.length > 0) {
+      currentY = checkNewPage(doc, currentY, 40);
+      doc.setFillColor(...successColor);
+      doc.roundedRect(marginLeft, currentY - 3, contentWidth, 8, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("VENTAS EN EFECTIVO", marginLeft + 2, currentY + 2);
+      currentY += 8;
+
+      const efectivoData = ventasEfectivo.map(v => {
+        const montoEfe = v.pagos
+          .filter(p => p.metodo_pago === 'efectivo')
+          .reduce((sum, p) => sum + parseFloat(p.monto.toString()), 0);
+        const isEliminado = !!v.borrado_en;
+        return [
+          isEliminado ? 'ELIMINADO' : v.nro_reg,
+          v.cliente || 'Publico',
+          v.mesa || 'Salón',
+          v.usuario_nombre || 'Personal',
+          `Bs ${montoEfe.toFixed(2)}`,
+          safeFormatDateTime(v.hora, "HH:mm")
+        ];
+      });
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [["Ticket", "Cliente", "Ubicación", "Cajero", "Monto", "Hora"]],
+        body: efectivoData,
+        theme: "grid",
+        headStyles: { fillColor: successColor, fontSize: 8, fontStyle: "bold" },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 20, halign: 'center' },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 25, halign: 'right' },
+          5: { cellWidth: 25, halign: 'center' },
+        },
+        margin: { left: marginLeft, right: marginRight - marginLeft },
+      });
+      currentY = (doc.lastAutoTable?.finalY ?? 0) + 10;
+    }
+
+    // Tabla QR
+    if (ventasQR.length > 0) {
+      currentY = checkNewPage(doc, currentY, 40);
+      doc.setFillColor(...infoColor);
+      doc.roundedRect(marginLeft, currentY - 3, contentWidth, 8, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("VENTAS POR QR", marginLeft + 2, currentY + 2);
+      currentY += 8;
+
+      const qrData = ventasQR.map(v => {
+        const montoQR = v.pagos
+          .filter(p => p.metodo_pago === 'qr')
+          .reduce((sum, p) => sum + parseFloat(p.monto.toString()), 0);
+        const isEliminado = !!v.borrado_en;
+        return [
+          isEliminado ? 'ELIMINADO' : v.nro_reg,
+          v.cliente || 'Publico',
+          v.mesa || 'Salón',
+          v.usuario_nombre || 'Personal',
+          `Bs ${montoQR.toFixed(2)}`,
+          safeFormatDateTime(v.hora, "HH:mm")
+        ];
+      });
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [["Ticket", "Cliente", "Ubicación", "Cajero", "Monto", "Hora"]],
+        body: qrData,
+        theme: "grid",
+        headStyles: { fillColor: infoColor, fontSize: 8, fontStyle: "bold" },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 20, halign: 'center' },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 25, halign: 'right' },
+          5: { cellWidth: 25, halign: 'center' },
+        },
+        margin: { left: marginLeft, right: marginRight - marginLeft },
+      });
+      currentY = (doc.lastAutoTable?.finalY ?? 0) + 10;
+    }
+  } else if (data.ventas.length > 0) {
+    const ventasData = data.ventas.map(s => [
+      s.nro_reg,
+      safeFormatDateTime(s.hora, "HH:mm"),
+      s.mesa || 'Salón',
+      s.cliente || 'Publico',
+      `Bs ${parseFloat(s.monto_total).toFixed(2)}`,
+    ]);
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [["Ticket", "Hora", "Ubicación", "Cliente", "Total"]],
+      body: ventasData,
+      theme: "striped",
+      headStyles: { fillColor: primaryColor, fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 25 },
+        4: { cellWidth: 25, halign: 'right' },
+      },
+      margin: { left: marginLeft, right: marginRight - marginLeft },
+    });
+    
+    currentY = (doc.lastAutoTable?.finalY ?? 0) + 8;
+  }
+
+  // ========== ITEMS ELIMINADOS (AUDITORIA) ==========
+  if (data.itemsEliminados && data.itemsEliminados.length > 0) {
+    currentY = checkNewPage(doc, currentY, 60);
+    
+    doc.setFillColor(...secondaryColor);
+    doc.roundedRect(marginLeft, currentY - 3, contentWidth, 8, 2, 2, "F");
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
-    doc.text("No hay ventas registradas en esta caja.", marginLeft + 2, currentY + 4);
-    currentY += 10;
+    doc.setFont("helvetica", "bold");
+    doc.text("ITEMS ELIMINADOS (AUDITORIA)", marginLeft + 2, currentY + 2);
+    
+    currentY += 8;
+    
+    const eliminadosData = data.itemsEliminados.map(item => [
+      item.transaccion_nro,
+      item.producto_nombre || item.plato_nombre || 'N/A',
+      item.cantidad,
+      `Bs ${parseFloat(item.precio_unitario.toString()).toFixed(2)}`,
+      `Bs ${parseFloat(item.subtotal.toString()).toFixed(2)}`,
+      safeFormatDateTime(item.borrado_en, "HH:mm")
+    ]);
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [["Ticket", "Producto / Detalle", "Cant.", "P. Unit", "Total", "Hora"]],
+      body: eliminadosData,
+      theme: "grid",
+      headStyles: { fillColor: secondaryColor, fontSize: 8, fontStyle: "bold" },
+      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 55 },
+        2: { cellWidth: 15, halign: 'center' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 25, halign: 'center' },
+      },
+      margin: { left: marginLeft, right: marginRight - marginLeft },
+    });
+    
+    currentY = (doc.lastAutoTable?.finalY ?? 0) + 12;
   }
 
   // ========== GASTOS ==========
@@ -502,7 +625,6 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
       theme: "striped",
       headStyles: { fillColor: dangerColor, fontSize: 7, fontStyle: "bold", halign: "center" },
       bodyStyles: { fontSize: 7 },
-      tableWidth: 'auto',
       columnStyles: {
         0: { halign: "center", cellWidth: 12 },
         1: { cellWidth: 75 },
@@ -605,6 +727,28 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
     currentY += 6;
   }
 
+  // ========== FIRMAS ==========
+  currentY = checkNewPage(doc, currentY, 40);
+  currentY += 20;
+
+  const signWidth = 60;
+  const signLeft = marginLeft + 20;
+  const signRight = pageWidth - marginLeft - 20 - signWidth;
+
+  doc.setDrawColor(150, 150, 150);
+  doc.line(signLeft, currentY, signLeft + signWidth, currentY);
+  doc.line(signRight, currentY, signRight + signWidth, currentY);
+
+  doc.setFontSize(8);
+  doc.setTextColor(...secondaryColor);
+  doc.setFont("helvetica", "bold");
+  doc.text("Firma de Cajero(a)", signLeft + signWidth / 2, currentY + 5, { align: "center" });
+  doc.text("Firma de Supervisor(a)", signRight + signWidth / 2, currentY + 5, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.text(data.caja.usuario_nombre || "________________", signLeft + signWidth / 2, currentY + 10, { align: "center" });
+
   // ========== FOOTER ==========
   addPageFooter(doc, pageWidth, doc.getNumberOfPages());
 }
@@ -633,29 +777,31 @@ export function generateGeneralReportPDF(
   doc.setFont('helvetica');
   const pageWidth = doc.internal.pageSize.getWidth();
   
-  const primaryColor: [number, number, number] = [26, 54, 93];
-  const secondaryColor: [number, number, number] = [51, 51, 51];
+  const primaryColor: [number, number, number] = [30, 41, 59]; // Slate 800
+  const secondaryColor: [number, number, number] = [51, 65, 85]; // Slate 600
 
   // Header
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 55, "F");
+  doc.rect(0, 0, pageWidth, 40, "F");
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("REPORTE GENERAL DE CAJAS", pageWidth / 2, 18, { align: "center" });
+  doc.text("REPORTE CONSOLIDADO DE VENTAS", 15, 18);
   
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("Restaurante V2", pageWidth / 2, 30, { align: "center" });
+  doc.setFontSize(10);
+  doc.text("RESTAURANTE V2", pageWidth - 15, 18, { align: "right" });
   
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text("Sistema de Gestión Integral | Oruro, Bolivia", pageWidth / 2, 38, { align: "center" });
-  
+  doc.setFillColor(...secondaryColor);
+  doc.rect(0, 40, pageWidth, 8, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7);
   if (fechaDesde || fechaHasta) {
-    doc.text(`Período: ${fechaDesde || "Inicio"} - ${fechaHasta || "Fin"}`, pageWidth / 2, 46, { align: "center" });
+    doc.text(`PERIODO: ${fechaDesde || "INICIO"} AL ${fechaHasta || "FIN"}`, 15, 45.5);
+  } else {
+    doc.text(`REPORTE GENERAL HISTORICO`, 15, 45.5);
   }
+  doc.text(`EMISIÓN: ${format(new Date(), "dd/MM/yyyy HH:mm:ss")}`, pageWidth - 15, 45.5, { align: "right" });
 
   // Summary totals
   let currentY = fechaDesde || fechaHasta ? 65 : 60;
@@ -673,17 +819,40 @@ export function generateGeneralReportPDF(
   const totalInicial = cajas.reduce((sum, c) => sum + c.resumen.monto_inicial, 0);
   const totalVentasEfectivo = cajas.reduce((sum, c) => sum + c.resumen.ventas_efectivo, 0);
   const totalVentasQR = cajas.reduce((sum, c) => sum + c.resumen.ventas_qr, 0);
-  const totalVentasCount = cajas.reduce((sum, c) => sum + c.ventas.length, 0);
+  const totalVentasCount = cajas.reduce((sum, c) => sum + (c.resumen.ventas_count || c.ventas.length), 0);
+  
+  const allDeletedItems = cajas.flatMap(c => c.itemsEliminados || []);
+  const totalDeletedItems = allDeletedItems.length;
 
   const summaryData = [
-    ["Total Cajas", cajas.length.toString()],
-    ["Total Ventas Registradas", totalVentasCount.toString()],
+    ["Cajas Consolidadas", cajas.length.toString()],
+    ["Ventas Totales", totalVentasCount.toString()],
+    ["Ítems Eliminados", totalDeletedItems.toString()],
+    ["Ventas en Efectivo", `Bs ${totalVentasEfectivo.toFixed(2)}`],
+    ["Ventas por QR", `Bs ${totalVentasQR.toFixed(2)}`],
     ["Monto Inicial Total", `Bs ${totalInicial.toFixed(2)}`],
-    ["Ventas Efectivo", `Bs ${totalVentasEfectivo.toFixed(2)}`],
-    ["Ventas QR", `Bs ${totalVentasQR.toFixed(2)}`],
-    ["Total Ventas", `Bs ${totalVentas.toFixed(2)}`],
-    ["Total Gastos", `Bs ${totalGastos.toFixed(2)}`],
+    ["Gastos Totales", `Bs ${totalGastos.toFixed(2)}`],
+    ["BALANCE NETO", `Bs ${totalVentas.toFixed(2)}`],
   ];
+
+  // Aggregated items summary
+  const allItems = cajas.flatMap(c => c.items || []);
+  const consolidatedItemsMap: Record<string, any> = {};
+  
+  allItems.forEach(item => {
+    const key = `${item.nombre}-${item.tipo}`;
+    if (!consolidatedItemsMap[key]) {
+      consolidatedItemsMap[key] = { ...item, 
+        cantidad: Number(item.cantidad), 
+        total: Number(item.total) 
+      };
+    } else {
+      consolidatedItemsMap[key].cantidad += Number(item.cantidad);
+      consolidatedItemsMap[key].total += Number(item.total);
+    }
+  });
+  
+  const consolidatedItems = Object.values(consolidatedItemsMap).sort((a, b) => b.cantidad - a.cantidad);
 
   autoTable(doc, {
     startY: currentY,
@@ -693,15 +862,57 @@ export function generateGeneralReportPDF(
     bodyStyles: { fontSize: 9 },
     columnStyles: {
       0: { fontStyle: "bold", cellWidth: 70 },
-      1: { halign: "right", cellWidth: 40 },
+      1: { halign: "right", cellWidth: 45 },
     },
     margin: { left: 14, right: 14 },
-    tableWidth: 110,
+    tableWidth: 115,
   });
 
-  currentY = (doc.lastAutoTable?.finalY ?? 0) + 15;
+  currentY = (doc.lastAutoTable?.finalY ?? 0) + 12;
 
-  // Each caja summary
+  // ========== CONSOLIDADO DE PRODUCTOS ==========
+  if (consolidatedItems.length > 0) {
+    if (currentY > 240) {
+        doc.addPage();
+        currentY = 20;
+    }
+    
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("VENTAS CONSOLIDADAS POR PRODUCTO", 14, currentY);
+    doc.line(14, currentY + 2, pageWidth - 14, currentY + 2);
+    currentY += 8;
+
+    const itemsData = consolidatedItems.map(item => [
+      item.nombre,
+      item.tipo === 'producto' ? 'PRODUCTO' : 'PLATO',
+      item.cantidad,
+      `Bs ${parseFloat((item.total / item.cantidad).toString()).toFixed(2)}`,
+      `Bs ${parseFloat(item.total.toString()).toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [["Descripción", "Categoría", "Cant.", "P. Unit", "Subtotal"]],
+      body: itemsData,
+      theme: "striped",
+      headStyles: { fillColor: [71, 85, 105], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 75 },
+        1: { cellWidth: 25, halign: 'center' },
+        2: { cellWidth: 15, halign: 'center' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 30, halign: 'right' },
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    currentY = (doc.lastAutoTable?.finalY ?? 0) + 15;
+  }
+
+  // Each caja summary loop (keeping it for individual detail)
   cajas.forEach((caja) => {
     if (currentY > 240) {
       doc.addPage();
@@ -714,17 +925,17 @@ export function generateGeneralReportPDF(
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text(`CAJA #${caja.caja.id} - ${caja.caja.fecha} - ${caja.caja.cerrada ? 'CERRADA' : 'ABIERTA'}`, 17, currentY + 7);
+    doc.text(`TICKET DE CAJA: ${caja.caja.fecha} - ${caja.caja.cerrada ? 'CERRADA' : 'ABIERTA'}`, 17, currentY + 7);
     
     currentY += 14;
 
     const miniData = [
-      ["Inicial", `Bs ${caja.resumen.monto_inicial.toFixed(2)}`],
-      ["Ventas", `Bs ${caja.resumen.total_del_dia.toFixed(2)}`],
-      ["Efectivo", `Bs ${caja.resumen.ventas_efectivo.toFixed(2)}`],
-      ["QR", `Bs ${caja.resumen.ventas_qr.toFixed(2)}`],
-      ["Gastos", `Bs ${caja.resumen.total_gastos.toFixed(2)}`],
-      [`(${caja.ventas.length} ventas)`, ""],
+      ["Monto Inicial", `Bs ${caja.resumen.monto_inicial.toFixed(2)}`],
+      ["Ventas Netas", `Bs ${caja.resumen.total_del_dia.toFixed(2)}`],
+      ["Recaudado Efe.", `Bs ${caja.resumen.ventas_efectivo.toFixed(2)}`],
+      ["Recaudado QR", `Bs ${caja.resumen.ventas_qr.toFixed(2)}`],
+      ["Egresos/Gastos", `Bs ${caja.resumen.total_gastos.toFixed(2)}`],
+      [`Operaciones:`, `${caja.resumen.ventas_count || caja.ventas.length} transacciones`],
     ];
 
     autoTable(doc, {
@@ -735,18 +946,60 @@ export function generateGeneralReportPDF(
       bodyStyles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 40, fontStyle: "bold" },
-        1: { halign: "right", cellWidth: 35 },
+        1: { halign: "right", cellWidth: 45 },
       },
       margin: { left: 14, right: 14 },
-      tableWidth: 75,
+      tableWidth: 85,
     });
 
     currentY = (doc.lastAutoTable?.finalY ?? 0) + 8;
   });
 
+  // ========== AGGREGATED DELETED ITEMS ==========
+  if (allDeletedItems.length > 0) {
+    if (currentY > 220) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    doc.setTextColor(...secondaryColor);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("AUDITORÍA CONSOLIDADA: ÍTEMS ELIMINADOS", 14, currentY);
+    doc.line(14, currentY + 2, pageWidth - 14, currentY + 2);
+    currentY += 8;
+
+    const eliminadosData = allDeletedItems.map((item: any) => [
+      item.transaccion_nro,
+      item.producto_nombre || item.plato_nombre || 'N/A',
+      item.cantidad,
+      `Bs ${parseFloat(item.precio_unitario.toString()).toFixed(2)}`,
+      `Bs ${parseFloat(item.subtotal.toString()).toFixed(2)}`,
+      safeFormatDateTime(item.borrado_en, "dd/MM HH:mm")
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [["Ticket", "Producto / Detalle", "Cant.", "P. Unit", "Total", "Fecha/Hora"]],
+      body: eliminadosData,
+      theme: "grid",
+      headStyles: { fillColor: secondaryColor, fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 15, halign: 'center' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 35, halign: 'center' },
+      },
+      margin: { left: 14, right: 14 },
+    });
+  }
+
   // Footer
   addPageFooter(doc, pageWidth, doc.getNumberOfPages());
 
-  const filename = `Reporte_General_${format(new Date(), "yyyy-MM-dd")}.pdf`;
+  const filename = `Reporte_Consolidado_${format(new Date(), "yyyy-MM-dd")}.pdf`;
   doc.save(filename);
 }

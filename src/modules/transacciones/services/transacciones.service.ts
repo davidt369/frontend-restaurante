@@ -141,4 +141,16 @@ export const transaccionesService = {
     completarOrdenCocina: async (id: number): Promise<void> => {
         await axiosInstance.patch(`/transacciones/${id}/cocina/completar`);
     },
+
+    // ========== REPORTES ==========
+
+    getItemsEliminados: async (cajaId: number): Promise<any[]> => {
+        const { data } = await axiosInstance.get(`/transacciones/caja/${cajaId}/items-eliminados`);
+        return data;
+    },
+
+    getVentasDetalladas: async (cajaId: number): Promise<any[]> => {
+        const { data } = await axiosInstance.get(`/transacciones/caja/${cajaId}/ventas-detalladas`);
+        return data;
+    },
 };
