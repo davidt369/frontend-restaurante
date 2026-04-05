@@ -15,11 +15,15 @@ const routeTitles: Record<string, string> = {
   "/dashboard/mesas": "Gestión de Mesas",
   "/dashboard/ordenes": "Órdenes",
   "/dashboard/configuracion": "Configuración",
+  "/caja": "Control de Caja",
+  "/caja/reporte": "Reportes de Caja",
+  "/dashboard/ventas": "Realizar Ventas",
+  "/ventas/historial": "Historial de Ventas",
 }
 
 export default function AppHeader() {
   const location = useLocation()
-  const title = routeTitles[location.pathname] || "Dashboard"
+  const title = routeTitles[location.pathname]
   const { theme, toggleTheme } = useTheme()
 
   return (

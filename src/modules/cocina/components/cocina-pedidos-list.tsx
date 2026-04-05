@@ -157,7 +157,7 @@ export function CocinaPedidosList({ pedidos, isLoading = false }: CocinaPedidosL
                                     )}
 
                                     <TableCell className="text-center align-middle border-r py-3 bg-background">
-                                 <span className="font-medium text-base text-muted-foreground truncate max-w-[180px]">
+                                        <span className="font-bold text-xl text-primary truncate max-w-[180px]">
                                             {Math.floor(parseFloat(item.cantidad))}
                                         </span>
                                     </TableCell>
@@ -172,7 +172,7 @@ export function CocinaPedidosList({ pedidos, isLoading = false }: CocinaPedidosL
                                     </TableCell> */}
 
                                     <TableCell className="text-center align-middle border-r py-3 bg-background">
-                                                                                              <span className="font-medium text-base text-muted-foreground truncate max-w-[180px]">
+                                        <span className="font-bold text-xl text-success truncate ">
 
                                             Bs {parseFloat(item.precio_unitario).toFixed(2)}
                                         </span>

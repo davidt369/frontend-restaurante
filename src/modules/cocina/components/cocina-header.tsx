@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChefHat, Clock, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { ChefHat, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type CocinaHeaderProps = {
@@ -12,7 +12,7 @@ type CocinaHeaderProps = {
 
 export function CocinaHeader({
     isConnected,
-    lastUpdate,
+
     loading,
     onRefresh,
 }: CocinaHeaderProps) {
@@ -37,14 +37,14 @@ export function CocinaHeader({
                             </Badge>
                         )}
                     </div>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    {/* <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {lastUpdate.toLocaleTimeString('es-BO', { 
                             hour: '2-digit', 
                             minute: '2-digit', 
                             second: '2-digit' 
                         })}
-                    </p>
+                    </p> */}
                 </div>
             </div>
             <Button
