@@ -3,52 +3,60 @@ import { toast } from "sonner"
 import { dashboardService } from "../services/dashboard.service"
 import type { DashboardStats } from "../types/dashboard.types"
 
-interface UseDashboardStatsReturn {
-    stats: DashboardStats | null
-    isLoading: boolean
-    error: string | null
-    refetch: () => void
+interface UseDashboardStatsParams {
+  startDate?: string
+  endDate?: string
 }
 
-export function useDashboardStats(): UseDashboardStatsReturn {
-    const [stats, setStats] = useState<DashboardStats | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [fetchTrigger, setFetchTrigger] = useState(0)
+interface UseDashboardStatsReturn {
+  stats: DashboardStats | null
+  isLoading: boolean
+  error: string | null
+  refetch: () => void
+}
 
-    useEffect(() => {
-        let cancelled = false
+export function useDashboardStats({
+  startDate,
+  endDate,
+}: UseDashboardStatsParams = {}): UseDashboardStatsReturn {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [fetchTrigger, setFetchTrigger] = useState(0)
 
-        const fetchStats = async () => {
-            setIsLoading(true)
-            setError(null)
+  useEffect(() => {
+    let cancelled = false
 
-            try {
-                const data = await dashboardService.getStats()
-                if (!cancelled) {
-                    setStats(data)
-                }
-            } catch {
-                if (!cancelled) {
-                    const mensaje = "No se pudieron cargar las estadísticas del dashboard"
-                    setError(mensaje)
-                    toast.error(mensaje)
-                }
-            } finally {
-                if (!cancelled) {
-                    setIsLoading(false)
-                }
-            }
+    const fetchStats = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const data = await dashboardService.getStats(startDate, endDate)
+        if (!cancelled) {
+          setStats(data)
         }
-
-        void fetchStats()
-
-        return () => {
-            cancelled = true
+      } catch {
+        if (!cancelled) {
+          const mensaje = "No se pudieron cargar las estadísticas del dashboard"
+          setError(mensaje)
+          toast.error(mensaje)
         }
-    }, [fetchTrigger])
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
 
-    const refetch = () => setFetchTrigger((prev) => prev + 1)
+    void fetchStats()
 
-    return { stats, isLoading, error, refetch }
+    return () => {
+      cancelled = true
+    }
+  }, [fetchTrigger, startDate, endDate])
+
+  const refetch = () => setFetchTrigger((prev) => prev + 1)
+
+  return { stats, isLoading, error, refetch }
 }
