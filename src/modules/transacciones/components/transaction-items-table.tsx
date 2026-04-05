@@ -24,6 +24,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
     Plus,
+    Minus,
     Trash2,
     ShoppingBag,
     Utensils,
@@ -41,6 +42,8 @@ interface TransactionItemsTableProps {
     productos: Producto[];
     selectItem: (rowId: string, itemId: string) => void;
     updateRow: (id: string, updates: Partial<ItemRow>) => void;
+    incrementCantidad: (id: string) => void;
+    decrementCantidad: (id: string) => void;
     addNewRow: () => void;
     removeRow: (id: string) => void;
     addExtraToRow: (rowId: string) => void;
@@ -60,6 +63,8 @@ export function TransactionItemsTable({
     productos,
     selectItem,
     updateRow,
+    incrementCantidad,
+    decrementCantidad,
     addNewRow,
     removeRow,
     addExtraToRow,
@@ -89,7 +94,7 @@ export function TransactionItemsTable({
                             <TableHead className="min-w-[300px]">
                                 Item (Producto/Plato)
                             </TableHead>
-                            <TableHead className="w-[120px]">Cantidad</TableHead>
+                            <TableHead className="w-[160px] text-center">Cantidad</TableHead>
                             <TableHead className="w-[100px]">Extras</TableHead>
                             <TableHead className="min-w-[200px]">Notas</TableHead>
                             <TableHead className="w-[60px]"></TableHead>
@@ -164,26 +169,45 @@ export function TransactionItemsTable({
 
                                 {/* Cantidad */}
                                 <TableCell>
-                                    <Input
-                                        ref={(el) => {
-                                            if (cantidadInputRefs.current) {
-                                                cantidadInputRefs.current[row.id] = el;
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8 shrink-0"
+                                            onClick={() => decrementCantidad(row.id)}
+                                            disabled={row.cantidad <= 1}
+                                        >
+                                            <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <Input
+                                            ref={(el) => {
+                                                if (cantidadInputRefs.current) {
+                                                    cantidadInputRefs.current[row.id] = el;
+                                                }
+                                            }}
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={row.cantidad}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                                updateRow(row.id, {
+                                                    cantidad: parseInt(e.target.value) || 1,
+                                                })
                                             }
-                                        }}
-                                        type="number"
-                                        min="0"
-                                        step="0"
-                                        value={row.cantidad}
-                                        onChange={(e) =>
-                                            updateRow(row.id, {
-                                                cantidad: parseInt(e.target.value) || 0,
-                                            })
-                                        }
-                                        onKeyDown={(e) =>
-                                            handleKeyDown(e, row.id, index, "cantidad")
-                                        }
-                                        className="text-center"
-                                    />
+                                            onKeyDown={(e) =>
+                                                handleKeyDown(e, row.id, index, "cantidad")
+                                            }
+                                            className="text-center h-8 w-14"
+                                        />
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8 shrink-0"
+                                            onClick={() => incrementCantidad(row.id)}
+                                        >
+                                            <Plus className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
 
                                 {/* Extras */}
@@ -304,7 +328,7 @@ export function TransactionItemsTable({
                                             }
                                         }}
                                         value={row.notas}
-                                        onChange={(e) =>
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                             updateRow(row.id, { notas: e.target.value })
                                         }
                                         placeholder="Notas..."

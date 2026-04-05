@@ -68,7 +68,7 @@ export function useTransaction({
     });
 
     // Payment
-    const [showPayment, setShowPayment] = useState(false);
+    const [showPayment, setShowPayment] = useState(true);
     const [metodoPago, setMetodoPago] = useState<"efectivo" | "qr">("efectivo");
     const [montoPago, setMontoPago] = useState<number>(0);
     const [montoRecibido, setMontoRecibido] = useState<number>(0);
@@ -90,12 +90,29 @@ export function useTransaction({
         },
     });
 
+    const total = rows.reduce((sum, row) => sum + row.subtotal, 0);
+
     useEffect(() => {
         if (open) {
             fetchData();
             checkCaja();
         }
     }, [open]);
+
+    // Update payment amount when total changes OR method changes OR showPayment changes
+    useEffect(() => {
+        if (!showPayment) {
+            setMontoPago(0);
+            return;
+        }
+
+        if (metodoPago === "qr") {
+            setMontoPago(total);
+        } else if (montoPago === 0 || montoPago > total) {
+            // Default to total if it's currently 0 or invalid
+            setMontoPago(total);
+        }
+    }, [total, metodoPago, showPayment]);
 
     const fetchData = async () => {
         try {
@@ -146,6 +163,20 @@ export function useTransaction({
                 return row;
             })
         );
+    };
+
+    const incrementCantidad = (id: string) => {
+        const row = rows.find(r => r.id === id);
+        if (row) {
+            updateRow(id, { cantidad: row.cantidad + 1 });
+        }
+    };
+
+    const decrementCantidad = (id: string) => {
+        const row = rows.find(r => r.id === id);
+        if (row && row.cantidad > 1) {
+            updateRow(id, { cantidad: row.cantidad - 1 });
+        }
     };
 
     const selectItem = (rowId: string, itemId: string) => {
@@ -292,9 +323,9 @@ export function useTransaction({
                 subtotal: 0,
             },
         ]);
-        setShowPayment(false);
         setMontoPago(0);
         setMontoRecibido(0);
+        setShowPayment(true);
     };
 
     const handleSubmitTransaction = async (values: TransaccionFormValues) => {
@@ -352,7 +383,6 @@ export function useTransaction({
     };
 
     const ubicacion = ["Mesa", "Para llevar", "Auto", "Sala"];
-    const total = rows.reduce((sum, row) => sum + row.subtotal, 0);
     const validItemCount = rows.filter((row) => row.item_id).length;
     const cambio = metodoPago === "efectivo" ? Math.max(0, montoRecibido - montoPago) : 0;
 
@@ -390,6 +420,8 @@ export function useTransaction({
 
         // Actions
         updateRow,
+        incrementCantidad,
+        decrementCantidad,
         selectItem,
         addNewRow,
         removeRow,

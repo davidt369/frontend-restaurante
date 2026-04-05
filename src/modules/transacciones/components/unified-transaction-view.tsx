@@ -57,6 +57,8 @@ export function UnifiedTransactionView({
 
         // Actions
         updateRow,
+        incrementCantidad,
+        decrementCantidad,
         selectItem,
         addNewRow,
         removeRow,
@@ -106,6 +108,8 @@ export function UnifiedTransactionView({
                             productos={productos}
                             selectItem={selectItem}
                             updateRow={updateRow}
+                            incrementCantidad={incrementCantidad}
+                            decrementCantidad={decrementCantidad}
                             addNewRow={addNewRow}
                             removeRow={removeRow}
                             addExtraToRow={addExtraToRow}
