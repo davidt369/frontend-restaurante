@@ -396,7 +396,7 @@ export function DashboardPage() {
               <div className="space-y-2 pt-1">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-medium text-muted-foreground">Cargo:</span>
-                  <Badge className="bg-secondary capitalize py-0 px-2 text-[10px]">
+                  <Badge className="bg-secondary1 capitalize py-0 px-2 text-[10px]">
                     {usuario?.rol}
                   </Badge>
                 </div>
