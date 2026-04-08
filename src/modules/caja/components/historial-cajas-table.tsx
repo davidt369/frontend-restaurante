@@ -6,42 +6,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format, isValid } from "date-fns";
-
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CajaTurnoResponse } from "../types/caja.types";
 import { Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatDate, formatTime } from "@/utils/date-format";
 
 interface HistorialCajasTableProps {
   cajas: CajaTurnoResponse[];
   isLoading?: boolean;
-}
-
-const formatTime = (dateString: string | null) => {
-  if (!dateString) return "-";
-  // Si viene en formato "HH:mm - dd/MM/yyyy" (Backend Interceptor)
-  if (dateString.includes(' - ')) {
-    return dateString.split(' - ')[0]; // Retorna HH:mm
-  }
-
-  // Intenta parsear como ISO
-  const date = new Date(dateString);
-  if (isValid(date)) {
-    return format(date, "HH:mm");
-  }
-
-  return dateString;
-};
-
-const formatDate = (dateString: string) => {
-  // caja.fecha suele ser "YYYY-MM-DD"
-  const date = new Date(dateString + 'T12:00:00');
-  if (isValid(date)) {
-    return format(date, "dd/MM/yyyy");
-  }
-  return dateString;
 }
 
 export function HistorialCajasTable({ cajas, isLoading = false }: HistorialCajasTableProps) {

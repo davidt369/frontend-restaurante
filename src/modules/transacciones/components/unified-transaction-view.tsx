@@ -66,6 +66,7 @@ export function UnifiedTransactionView({
         removeExtraFromRow,
         handleKeyDown,
         handleSubmitTransaction,
+        resetForm,
 
         // Computed
         total,
@@ -73,6 +74,11 @@ export function UnifiedTransactionView({
         cambio,
         ubicacion,
     } = useTransaction({ open, onOpenChange, onSubmit, nextNroReg });
+
+    const handleCancel = () => {
+        resetForm();
+        onOpenChange(false);
+    };
 
     if (!open) return null;
 
@@ -143,7 +149,7 @@ export function UnifiedTransactionView({
                     <div className="mr-auto text-sm text-muted-foreground">
                         {validItemCount} items • Total: Bs {total.toFixed(2)}
                     </div>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button variant="outline" onClick={handleCancel}>
                         Cancelar
                     </Button>
                     <Button

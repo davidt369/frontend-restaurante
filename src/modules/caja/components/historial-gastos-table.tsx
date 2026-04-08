@@ -6,29 +6,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format, isValid } from "date-fns";
 import type { GastoCajaResponse } from "../types/caja.types";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDateTime } from "@/utils/date-format";
 
 interface HistorialGastosTableProps {
   gastos: GastoCajaResponse[];
   isLoading?: boolean;
-}
-
-const formatDateTime = (dateString: string | null) => {
-  if (!dateString) return "-";
-  
-  if (dateString.includes(' - ')) {
-    return dateString; // Ya viene formateada del backend
-  }
-
-  const date = new Date(dateString);
-  if (isValid(date)) {
-    return format(date, "dd/MM/yyyy HH:mm");
-  }
-  
-  return dateString;
 }
 
 export function HistorialGastosTable({ gastos, isLoading = false }: HistorialGastosTableProps) {

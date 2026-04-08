@@ -7,13 +7,13 @@ import type { CajaTurnoResponse, ResumenCierre } from '../types/caja.types';
 import { cajaService } from '../services/caja.service';
 import { RegistrarGastoDialog } from './registrar-gasto-dialog';
 import { RegistrarConteoCard } from './registrar-conteo-card';
-import { format } from 'date-fns';
 import { ArrowDownCircle, ArrowUpCircle, Wallet, CreditCard, RefreshCw, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { transaccionesService } from '../../transacciones/services/transacciones.service';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { formatDate, formatTime } from '@/utils/date-format';
 
 interface DineroValues {
   b200?: number;
@@ -206,7 +206,7 @@ export function CajaDashboard({ caja, onCajaCerrada, onRefreshCaja }: CajaDashbo
             {yaArqueado && <Badge variant="secondary" className="bg-info-bg text-info border-info-border">Arqueada</Badge>}
           </div>
           <p className="text-muted-foreground capitalize mt-1">
-            {caja.fecha} • Hora apertura: {caja.hora_apertura?.split(' - ')[0] || '--:--'}
+            {formatDate(caja.fecha)} • Hora apertura: {formatTime(caja.hora_apertura)}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
@@ -273,9 +273,7 @@ export function CajaDashboard({ caja, onCajaCerrada, onRefreshCaja }: CajaDashbo
                           {gasto.metodo_pago === 'efectivo' ? 'Efectivo' : 'QR'}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {gasto.creado_en && gasto.creado_en.includes(' - ')
-                            ? gasto.creado_en.split(' - ')[0]
-                            : (gasto.creado_en ? format(new Date(gasto.creado_en), 'HH:mm') : '')}
+                          {formatTime(gasto.creado_en)}
                         </span>
                       </div>
                     </div>

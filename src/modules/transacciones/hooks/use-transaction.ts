@@ -37,6 +37,14 @@ export function useTransaction({
     onSubmit,
     nextNroReg,
 }: UseTransactionProps) {
+    const generateId = () => {
+        try {
+            return crypto.randomUUID();
+        } catch {
+            return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        }
+    };
+
     // Data
     const [productos, setProductos] = useState<Producto[]>([]);
     const [platos, setPlatos] = useState<Plato[]>([]);
@@ -47,7 +55,7 @@ export function useTransaction({
     // Items table
     const [rows, setRows] = useState<ItemRow[]>([
         {
-            id: crypto.randomUUID(),
+            id: generateId(),
             tipo: "",
             item_id: "",
             item_nombre: "",
@@ -78,6 +86,7 @@ export function useTransaction({
     // Refs for keyboard navigation
     const cantidadInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
     const notasInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+    const prevTotalRef = useRef<number>(0);
 
     // Form for transaction header
     const form = useForm<TransaccionFormValues>({
@@ -108,10 +117,12 @@ export function useTransaction({
 
         if (metodoPago === "qr") {
             setMontoPago(total);
-        } else if (montoPago === 0 || montoPago > total) {
-            // Default to total if it's currently 0 or invalid
+        } else if (montoPago === 0 || montoPago === prevTotalRef.current || montoPago > total) {
+            // Default to total if it's currently 0, in sync with previous total, or invalid
             setMontoPago(total);
         }
+        
+        prevTotalRef.current = total;
     }, [total, metodoPago, showPayment]);
 
     const fetchData = async () => {
@@ -133,6 +144,7 @@ export function useTransaction({
 
     const checkCaja = async () => {
         try {
+            if (!open) return;
             const caja = await cajaService.obtenerCajaAbierta();
             if (!caja) {
                 toast.error("No hay una caja abierta. Debe abrir la caja primero.");
@@ -202,7 +214,7 @@ export function useTransaction({
 
     const addNewRow = () => {
         const newRow: ItemRow = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             tipo: "",
             item_id: "",
             item_nombre: "",
@@ -215,12 +227,42 @@ export function useTransaction({
         setRows([...rows, newRow]);
     };
 
+    const resetForm = () => {
+        form.reset();
+        setRows([
+            {
+                id: generateId(),
+                tipo: "",
+                item_id: "",
+                item_nombre: "",
+                cantidad: 1,
+                precio: 0,
+                extras: [],
+                notas: "",
+                subtotal: 0,
+            },
+        ]);
+        setMontoPago(0);
+        setMontoRecibido(0);
+        setShowPayment(true);
+    };
+
     const removeRow = (id: string) => {
         if (rows.length === 1) {
-            toast.error("Debe haber al menos una fila");
+            // Si es la única fila, reiniciamos todo el formulario
+            resetForm();
             return;
         }
-        setRows(rows.filter((row) => row.id !== id));
+        
+        setRows((prev) => prev.filter((row) => row.id !== id));
+        
+        // Limpiar popover si estaba abierto
+        setExtrasPopoverOpen((prev) => {
+            if (!prev[id]) return prev;
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
     };
 
     // Extras management functions
@@ -233,7 +275,7 @@ export function useTransaction({
         }
 
         const newExtra: ItemExtra = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             tipo: "custom",
             descripcion: "Extra",
             precio,
@@ -308,26 +350,6 @@ export function useTransaction({
         }
     };
 
-    const resetForm = () => {
-        form.reset();
-        setRows([
-            {
-                id: crypto.randomUUID(),
-                tipo: "",
-                item_id: "",
-                item_nombre: "",
-                cantidad: 1,
-                precio: 0,
-                extras: [],
-                notas: "",
-                subtotal: 0,
-            },
-        ]);
-        setMontoPago(0);
-        setMontoRecibido(0);
-        setShowPayment(true);
-    };
-
     const handleSubmitTransaction = async (values: TransaccionFormValues) => {
         const validRows = rows.filter((row) => row.item_id && row.cantidad > 0);
 
@@ -336,14 +358,35 @@ export function useTransaction({
             return;
         }
 
-        const transaccionDto: CreateTransaccionDto = {
-            nro_reg: nextNroReg,
-            concepto: values.concepto,
-            mesa: values.mesa || undefined,
-            cliente: values.cliente || undefined,
-            estado: values.estado,
-            caja_id: cajaActual || undefined,
-        };
+        // Determinar si se registra un pago
+        let pagoDto: CreatePagoDto | undefined;
+        let estadoFinal = values.estado;
+
+        // Si el monto recibido es <= 0 en efectivo, consideramos que no ha pagado (pedido pendiente)
+        const pagoOmitido = metodoPago === "efectivo" && montoRecibido <= 0;
+
+        if (showPayment && montoPago > 0 && !pagoOmitido) {
+            // Validar monto recibido en efectivo
+            if (metodoPago === "efectivo" && montoRecibido < montoPago) {
+                toast.error("Debe ingresar un monto recibido válido (mínimo " + montoPago.toFixed(2) + " Bs)");
+                return;
+            }
+
+            pagoDto = {
+                metodo_pago: metodoPago,
+                monto: montoPago,
+                monto_recibido: metodoPago === "efectivo" ? montoRecibido : undefined,
+                referencia_qr: undefined,
+            };
+
+            // Si el pago cubre el total, la transacción se marca como cerrada
+            if (montoPago >= total) {
+                estadoFinal = "cerrado";
+            }
+        } else {
+            // Si no hay pago, la transacción debe permanecer abierta
+            estadoFinal = "abierto";
+        }
 
         const itemsDto: AddItemDto[] = validRows.map((row) => ({
             producto_id: row.tipo === "producto" ? row.item_id : undefined,
@@ -358,22 +401,22 @@ export function useTransaction({
             }))
         }));
 
-        let pagoDto: CreatePagoDto | undefined;
-        if (showPayment && montoPago > 0) {
-            pagoDto = {
-                metodo_pago: metodoPago,
-                monto: montoPago,
-                monto_recibido: metodoPago === "efectivo" ? montoRecibido : undefined,
-                referencia_qr: undefined,
-            };
-        }
+        const transaccionDto: CreateTransaccionDto = {
+            nro_reg: nextNroReg,
+            concepto: values.concepto,
+            mesa: values.mesa || undefined,
+            cliente: values.cliente || undefined,
+            estado: estadoFinal,
+            caja_id: cajaActual || undefined,
+        };
 
         try {
             setSubmitting(true);
             await onSubmit(transaccionDto, itemsDto, pagoDto);
             toast.success("Transacción creada exitosamente");
             onOpenChange(false);
-            resetForm();
+            // resetForm es llamado después del cierre para limpiar el estado interno
+            setTimeout(resetForm, 100);
         } catch (error) {
             console.error(error);
             toast.error("Error al crear transacción");
@@ -429,6 +472,7 @@ export function useTransaction({
         removeExtraFromRow,
         handleKeyDown,
         handleSubmitTransaction,
+        resetForm,
 
         // Computed
         total,
