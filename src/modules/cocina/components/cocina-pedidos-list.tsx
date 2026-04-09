@@ -180,7 +180,7 @@ export function CocinaPedidosList({ pedidos, isLoading = false }: CocinaPedidosL
 
                                     <TableCell className="align-middle bg-warning-bg/40 dark:bg-warning-bg py-2 px-3">
                                         <div className="space-y-2">
-                                            {/* {item.extras && item.extras.length > 0 && (
+                                            {item.extras && item.extras.length > 0 && (
                                                 <div className="flex flex-wrap gap-2">
                                                     {item.extras.map((extra) => (
                                                         <div
@@ -189,14 +189,14 @@ export function CocinaPedidosList({ pedidos, isLoading = false }: CocinaPedidosL
                                                         >
                                                             <span className="text-success font-bold text-lg leading-none">+</span>
                                                             <span className="font-bold text-base leading-none">
-                                                                {extra.nombre ||
-                                                                    extra.ingrediente_nombre ||
-                                                                    extra.descripcion}
+                                                                {extra.descripcion ||
+                                                                    extra.nombre ||
+                                                                    extra.ingrediente_nombre}
                                                             </span>
                                                         </div>
                                                     ))}
                                                 </div>
-                                            )} */}
+                                            )}
 
                                             {item.notas && (
                                                 <div className="flex items-center gap-2 text-destructive bg-destructive/5 px-2 py-1 rounded border border-destructive/10">

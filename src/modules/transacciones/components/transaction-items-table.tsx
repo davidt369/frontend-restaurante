@@ -14,7 +14,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
+
 import {
     Command,
     CommandEmpty,
@@ -33,7 +33,7 @@ import {
     Search,
     Check,
     ChevronsUpDown,
-    AlertCircle,
+
     PackageOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,15 +52,12 @@ interface TransactionItemsTableProps {
     decrementCantidad: (id: string) => void;
     addNewRow: () => void;
     removeRow: (id: string) => void;
-    addExtraToRow: (rowId: string) => void;
+    addExtraToRow: (rowId: string, precio: number, descripcion: string) => void;
     removeExtraFromRow: (rowId: string, extraId: string) => void;
     handleKeyDown: (e: KeyboardEvent, rowId: string, rowIndex: number, cell: "cantidad" | "notas") => void;
-    extrasPopoverOpen: { [key: string]: boolean };
-    setExtrasPopoverOpen: (open: React.SetStateAction<{ [key: string]: boolean }>) => void;
-    extraForm: { precio: string };
-    setExtraForm: (form: { precio: string }) => void;
     cantidadInputRefs: RefObject<{ [key: string]: HTMLInputElement | null }>;
     notasInputRefs: RefObject<{ [key: string]: HTMLInputElement | null }>;
+    ubicacion: string[];
 }
 
 export function TransactionItemsTable({
@@ -76,13 +73,33 @@ export function TransactionItemsTable({
     addExtraToRow,
     removeExtraFromRow,
     handleKeyDown,
-    extrasPopoverOpen,
-    setExtrasPopoverOpen,
-    extraForm,
-    setExtraForm,
     cantidadInputRefs,
     notasInputRefs,
+    ubicacion,
 }: TransactionItemsTableProps) {
+    const [localExtraForms, setLocalExtraForms] = useState<{ [key: string]: { descripcion: string, precio: string } }>({});
+
+    const updateLocalExtra = (rowId: string, updates: { descripcion?: string, precio?: string }) => {
+        setLocalExtraForms(prev => ({
+            ...prev,
+            [rowId]: {
+                descripcion: prev[rowId]?.descripcion ?? "",
+                precio: prev[rowId]?.precio ?? "",
+                ...updates
+            }
+        }));
+    };
+
+    const handleAddExtra = (rowId: string) => {
+        const form = localExtraForms[rowId];
+        if (!form) return;
+
+        const price = parseFloat(form.precio);
+        if (price > 0) {
+            addExtraToRow(rowId, price, form.descripcion);
+            updateLocalExtra(rowId, { descripcion: "", precio: "" });
+        }
+    };
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -95,10 +112,10 @@ export function TransactionItemsTable({
                         <p className="text-xs text-muted-foreground">Administra los platos y productos de esta venta</p>
                     </div>
                 </div>
-                <Button 
-                    onClick={addNewRow} 
-                    variant="default" 
-                    size="sm" 
+                <Button
+                    onClick={addNewRow}
+                    variant="default"
+                    size="sm"
                     className="shadow-sm hover:shadow-md transition-all active:scale-95"
                 >
                     <Plus className="h-4 w-4 mr-2" /> Agregar Item
@@ -111,9 +128,9 @@ export function TransactionItemsTable({
                         <PackageOpen className="h-10 w-10 opacity-50" />
                     </div>
                     <p className="text-sm font-medium">No hay items en el pedido</p>
-                    <Button 
-                        variant="link" 
-                        size="sm" 
+                    <Button
+                        variant="link"
+                        size="sm"
                         onClick={addNewRow}
                         className="mt-1"
                     >
@@ -128,17 +145,18 @@ export function TransactionItemsTable({
                             <TableHeader>
                                 <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
                                     <TableHead className="w-[50px] text-center font-bold">#</TableHead>
-                                    <TableHead className="min-w-[320px] font-bold">Item (Producto o Plato)</TableHead>
-                                    <TableHead className="w-[160px] text-center font-bold">Cantidad</TableHead>
-                                    <TableHead className="w-[100px] text-center font-bold">Extras</TableHead>
-                                    <TableHead className="min-w-[200px] font-bold">Observaciones</TableHead>
-                                    <TableHead className="w-[80px] text-right font-bold pr-6">Acciones</TableHead>
+                                    <TableHead className="w-[140px] font-bold">Ubicación</TableHead>
+                                    <TableHead className="min-w-[250px] font-bold">Item (Producto o Plato)</TableHead>
+                                    <TableHead className="w-[130px] text-center font-bold">Cantidad</TableHead>
+                                    <TableHead className="w-[240px] font-bold">Extra Rápido</TableHead>
+                                    <TableHead className="min-w-[150px] font-bold">Observaciones</TableHead>
+                                    <TableHead className="w-[70px] text-right font-bold pr-6">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {rows.map((row, index) => (
-                                    <TableRow key={row.id} className="group hover:bg-muted/20 transition-colors border-b last:border-0">
-                                        <TableCell className="text-center">
+                                    <TableRow key={row.id} className="group hover:bg-muted/20 transition-colors border-b last:border-0 align-middle">
+                                        <TableCell className="text-center py-2">
                                             <span className="font-mono text-xs text-muted-foreground font-medium">
                                                 {(index + 1).toString().padStart(2, '0')}
                                             </span>
@@ -146,10 +164,21 @@ export function TransactionItemsTable({
 
                                         {/* Item Selection with Searchable Combobox */}
                                         <TableCell>
+                                            <MesaSelector
+                                                value={row.mesa}
+                                                onChange={(val: string) => updateRow(row.id, { mesa: val })}
+                                                ubicacion={ubicacion}
+                                                rowId={row.id}
+                                            />
+                                        </TableCell>
+
+                                        <TableCell>
                                             <div className="flex flex-col gap-1.5 py-1">
                                                 <ItemSelector
                                                     value={row.item_id}
+                                                    itemNombre={row.item_nombre}
                                                     onSelect={(value) => selectItem(row.id, value)}
+                                                    onNameChange={(name: string) => updateRow(row.id, { item_nombre: name })}
                                                     platos={platos}
                                                     productos={productos}
                                                 />
@@ -161,10 +190,18 @@ export function TransactionItemsTable({
                                                             <Badge
                                                                 key={extra.id}
                                                                 variant="secondary"
-                                                                className="px-2 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-700 border-amber-200"
+                                                                className="px-2 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-700 border-amber-200 group/badge animate-in fade-in"
                                                             >
                                                                 <Sparkles className="h-2.5 w-2.5 mr-1" />
-                                                                {extra.descripcion} (+Bs {extra.precio.toFixed(2)})
+                                                                <span>{extra.descripcion}</span>
+                                                                <span className="mx-1">•</span>
+                                                                <span>Bs {extra.precio.toFixed(2)}</span>
+                                                                <button
+                                                                    onClick={() => removeExtraFromRow(row.id, extra.id)}
+                                                                    className="ml-1.5 hover:text-destructive transition-colors"
+                                                                >
+                                                                    <Trash2 className="h-2.5 w-2.5" />
+                                                                </button>
                                                             </Badge>
                                                         ))}
                                                     </div>
@@ -217,17 +254,40 @@ export function TransactionItemsTable({
                                             </div>
                                         </TableCell>
 
-                                        {/* Extras Button */}
-                                        <TableCell className="text-center">
-                                            <ItemExtrasPopover
-                                                row={row}
-                                                extrasPopoverOpen={extrasPopoverOpen}
-                                                setExtrasPopoverOpen={setExtrasPopoverOpen}
-                                                extraForm={extraForm}
-                                                setExtraForm={setExtraForm}
-                                                addExtraToRow={addExtraToRow}
-                                                removeExtraFromRow={removeExtraFromRow}
-                                            />
+                                        {/* Inline Extra Inputs - NOW IN THE CORRECT CELL */}
+                                        <TableCell>
+                                            <div className="flex items-center gap-1.5 opacity-80 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+
+                                                <div className="flex items-center gap-1 w-full max-w-[160px]">
+                                                    <div className="relative flex-1">
+                                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold">Bs</span>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0"
+                                                            value={localExtraForms[row.id]?.precio || ""}
+                                                            onChange={(e) => updateLocalExtra(row.id, { precio: e.target.value })}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === "Enter") {
+                                                                    e.preventDefault();
+                                                                    handleAddExtra(row.id);
+                                                                }
+                                                            }}
+                                                            className="h-9 pl-7 pr-1 text-[11px] font-bold rounded-xl bg-muted/10 border-muted-foreground/10 focus:bg-background transition-all w-full"
+                                                            disabled={!row.item_id}
+                                                        />
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-9 w-9 shrink-0 rounded-xl hover:bg-amber-100 hover:text-amber-600 border border-dashed border-amber-200 disabled:opacity-30 transition-all active:scale-95"
+                                                        onClick={() => handleAddExtra(row.id)}
+                                                        disabled={!row.item_id || !localExtraForms[row.id]?.precio}
+                                                    >
+                                                        <Plus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </TableCell>
 
                                         {/* Notas */}
@@ -274,7 +334,7 @@ export function TransactionItemsTable({
                         {rows.map((row, index) => (
                             <div key={row.id} className="p-4 border shadow-sm rounded-2xl bg-card space-y-4 relative overflow-hidden group">
                                 <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
-                                
+
                                 <div className="flex items-center justify-between pl-1">
                                     <div className="flex items-center gap-2">
                                         <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
@@ -297,11 +357,23 @@ export function TransactionItemsTable({
                                 </div>
 
                                 <div className="space-y-4 pl-1">
+                                    <div className="space-y-1.5 p-3 rounded-2xl bg-primary/5 border border-primary/10">
+                                        <label className="text-[10px] font-bold text-primary uppercase tracking-widest pl-1">Ubicación del Item</label>
+                                        <MesaSelector
+                                            value={row.mesa}
+                                            onChange={(val: string) => updateRow(row.id, { mesa: val })}
+                                            ubicacion={ubicacion}
+                                            rowId={row.id}
+                                        />
+                                    </div>
+
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Seleccionar Item</label>
                                         <ItemSelector
                                             value={row.item_id}
+                                            itemNombre={row.item_nombre}
                                             onSelect={(value) => selectItem(row.id, value)}
+                                            onNameChange={(name: string) => updateRow(row.id, { item_nombre: name })}
                                             platos={platos}
                                             productos={productos}
                                             className="h-11 rounded-xl"
@@ -332,17 +404,30 @@ export function TransactionItemsTable({
                                                 </Button>
                                             </div>
                                         </div>
-                                        <div className="space-y-1.5 flex flex-col justify-end">
-                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Extras</label>
-                                            <ItemExtrasPopover
-                                                row={row}
-                                                extrasPopoverOpen={extrasPopoverOpen}
-                                                setExtrasPopoverOpen={setExtrasPopoverOpen}
-                                                extraForm={extraForm}
-                                                setExtraForm={setExtraForm}
-                                                addExtraToRow={addExtraToRow}
-                                                removeExtraFromRow={removeExtraFromRow}
-                                            />
+                                        <div className="space-y-1.5 p-3 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+                                            <label className="text-[10px] font-bold text-amber-600 uppercase tracking-widest pl-1">Agregar Extra (Opcional)</label>
+                                            <div className="flex items-center gap-2">
+
+                                                <div className="flex items-center gap-2 w-full">
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0"
+                                                        value={localExtraForms[row.id]?.precio || ""}
+                                                        onChange={(e) => updateLocalExtra(row.id, { precio: e.target.value })}
+                                                        className="h-10 text-xs font-bold rounded-xl flex-1 bg-background"
+                                                        disabled={!row.item_id}
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        className="h-10 w-10 shrink-0 rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+                                                        onClick={() => handleAddExtra(row.id)}
+                                                        disabled={!row.item_id || !localExtraForms[row.id]?.precio}
+                                                    >
+                                                        <Plus className="h-5 w-5" />
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -382,303 +467,200 @@ export function TransactionItemsTable({
 }
 
 /**
+ * Mesa Selector for each row
+ */
+function MesaSelector({
+    value,
+    onChange,
+    ubicacion,
+    rowId
+}: {
+    value: string;
+    onChange: (val: string) => void;
+    ubicacion: string[];
+    rowId: string;
+}) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <div className="relative">
+            <Input
+                placeholder="Mesa/Ubic..."
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="pr-10 h-9 text-xs font-medium bg-background/50 focus:bg-background transition-all rounded-xl border-muted-foreground/10"
+                id={`mesa-input-${rowId}`}
+            />
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-2 hover:bg-transparent text-muted-foreground"
+                    >
+                        <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[180px] p-0 shadow-2xl border-primary/10 rounded-2xl overflow-hidden" align="end">
+                    <Command>
+                        <CommandList className="max-h-[250px] overflow-y-auto">
+                            <CommandGroup>
+                                {ubicacion.map((ubic) => (
+                                    <CommandItem
+                                        key={ubic}
+                                        value={ubic}
+                                        onSelect={(currentValue) => {
+                                            const originalValue = ubicacion.find((u) => u.toLowerCase() === currentValue.toLowerCase()) || currentValue;
+                                            const newValue = originalValue === "Para llevar" ? originalValue : `${originalValue} `;
+                                            onChange(newValue);
+                                            setOpen(false);
+                                            setTimeout(() => {
+                                                document.getElementById(`mesa-input-${rowId}`)?.focus();
+                                            }, 50);
+                                        }}
+                                        className="py-2.5 px-3 cursor-pointer flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Check className={cn(
+                                                "h-3.5 w-3.5 text-primary",
+                                                value?.startsWith(ubic) ? "opacity-100" : "opacity-0"
+                                            )} />
+                                            <span className="text-sm font-medium">{ubic}</span>
+                                        </div>
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+        </div>
+    );
+}
+
+/**
  * Searchable Item Selector (Combobox)
- * Provides a much better UX than a standard Select for large lists
  */
 function ItemSelector({
     value,
+    itemNombre,
     onSelect,
+    onNameChange,
     platos,
     productos,
     className
 }: {
     value: string;
+    itemNombre: string;
     onSelect: (val: string) => void;
+    onNameChange: (name: string) => void;
     platos: Plato[];
     productos: Producto[];
     className?: string;
 }) {
     const [open, setOpen] = useState(false);
-    
-    // Find selected item label for display
+
     const selectedPlato = platos.find(p => p.id === value);
     const selectedProducto = productos.find(p => p.id === value);
-    
-    const label = selectedPlato 
-        ? selectedPlato.nombre 
-        : selectedProducto 
-            ? selectedProducto.nombre 
-            : "Seleccionar item...";
-            
-    const price = selectedPlato 
-        ? Number(selectedPlato.precio).toFixed(2) 
-        : selectedProducto 
-            ? Number(selectedProducto.precio).toFixed(2) 
+
+    const price = selectedPlato
+        ? Number(selectedPlato.precio).toFixed(2)
+        : selectedProducto
+            ? Number(selectedProducto.precio).toFixed(2)
             : null;
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className={cn(
-                        "w-full justify-between h-9 text-sm font-normal bg-background/50 hover:bg-background transition-colors",
-                        !value && "text-muted-foreground",
-                        value && "font-medium",
-                        className
-                    )}
-                >
-                    <div className="flex items-center gap-2 truncate">
-                        {selectedPlato && <Utensils className="h-3.5 w-3.5 text-orange-500" />}
-                        {selectedProducto && <ShoppingBag className="h-3.5 w-3.5 text-blue-500" />}
-                        {!value && <Search className="h-3.5 w-3.5 opacity-50" />}
-                        <span className="truncate">{label}</span>
-                        {price && (
-                            <span className="ml-1 text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full border">
-                                Bs {price}
-                            </span>
-                        )}
-                    </div>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] min-w-[300px]" align="start">
-                <Command>
-                    <div className="flex items-center border-b px-3">
-                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                        <CommandInput placeholder="Buscar plato o producto..." className="h-10 border-none focus:ring-0" />
-                    </div>
-                    <CommandList 
-                        className="max-h-[300px] overflow-y-auto"
-                        onWheel={(e) => e.stopPropagation()}
-                        onTouchMove={(e) => e.stopPropagation()}
-                    >
-                        <CommandEmpty>
-                            <div className="flex flex-col items-center justify-center py-6 text-center">
-                                <AlertCircle className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                                <p className="text-sm">No se encontraron resultados</p>
-                            </div>
-                        </CommandEmpty>
-                        
-                        {platos.length > 0 && (
-                            <CommandGroup heading={<span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-1.5"><Utensils className="h-3 w-3" /> Platos</span>}>
-                                {platos.map((plato) => (
-                                    <CommandItem
-                                        key={plato.id}
-                                        value={plato.nombre}
-                                        onSelect={() => {
-                                            onSelect(plato.id);
-                                            setOpen(false);
-                                        }}
-                                        className="flex items-center justify-between cursor-pointer py-2.5 px-3"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn(
-                                                "h-8 w-8 rounded-lg flex items-center justify-center bg-orange-500/10 text-orange-600",
-                                                value === plato.id && "bg-orange-500 text-white"
-                                            )}>
-                                                <Utensils className="h-4 w-4" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-sm leading-none mb-1">{plato.nombre}</span>
-                                                <span className="text-[10px] text-muted-foreground">Plato preparado</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-foreground">Bs {Number(plato.precio).toFixed(2)}</span>
-                                            {value === plato.id && <Check className="h-4 w-4 text-primary" />}
-                                        </div>
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        )}
-                        
-                        <Separator className="my-1 opacity-50" />
-                        
-                        {productos.length > 0 && (
-                            <CommandGroup heading={<span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-1.5"><ShoppingBag className="h-3 w-3" /> Productos</span>}>
-                                {productos.map((producto) => (
-                                    <CommandItem
-                                        key={producto.id}
-                                        value={producto.nombre}
-                                        onSelect={() => {
-                                            onSelect(producto.id);
-                                            setOpen(false);
-                                        }}
-                                        className="flex items-center justify-between cursor-pointer py-2.5 px-3"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn(
-                                                "h-8 w-8 rounded-lg flex items-center justify-center bg-blue-500/10 text-blue-600",
-                                                value === producto.id && "bg-blue-500 text-white"
-                                            )}>
-                                                <ShoppingBag className="h-4 w-4" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-sm leading-none mb-1">{producto.nombre}</span>
-                                                <span className="text-[10px] text-muted-foreground">Producto de stock</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-foreground">Bs {Number(producto.precio).toFixed(2)}</span>
-                                            {value === producto.id && <Check className="h-4 w-4 text-primary" />}
-                                        </div>
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        )}
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
-}
-
-// Subcomponent to handle extras popover in both views
-function ItemExtrasPopover({
-    row,
-    extrasPopoverOpen,
-    setExtrasPopoverOpen,
-    extraForm,
-    setExtraForm,
-    addExtraToRow,
-    removeExtraFromRow,
-}: {
-    row: ItemRow;
-    extrasPopoverOpen: { [key: string]: boolean };
-    setExtrasPopoverOpen: (open: React.SetStateAction<{ [key: string]: boolean }>) => void;
-    extraForm: { precio: string };
-    setExtraForm: (form: { precio: string }) => void;
-    addExtraToRow: (rowId: string) => void;
-    removeExtraFromRow: (rowId: string, extraId: string) => void;
-}) {
-    const hasExtras = row.extras.length > 0;
-    
-    return (
-        <Popover
-            open={extrasPopoverOpen[row.id] || false}
-            onOpenChange={(open) =>
-                setExtrasPopoverOpen((prev) => ({
-                    ...prev,
-                    [row.id]: open,
-                }))
-            }
-        >
-            <PopoverTrigger asChild>
-                <Button
-                    variant={hasExtras ? "default" : "outline"}
-                    size="sm"
-                    className={cn(
-                        "h-9 md:h-8 w-full md:w-auto min-w-[40px] rounded-xl md:rounded-lg shadow-sm border-dashed",
-                        hasExtras && "bg-amber-500 hover:bg-amber-600 border-none text-white",
-                        !row.item_id && "opacity-50 pointer-events-none"
-                    )}
-                    disabled={!row.item_id}
-                >
-                    <Sparkles className={cn("h-3.5 w-3.5", hasExtras ? "mr-1.5" : "")} />
-                    {hasExtras && <span className="font-bold text-xs">{row.extras.length}</span>}
-                    {!hasExtras && <span className="md:hidden ml-2 text-xs">Extras</span>}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 sm:w-96 p-0 border rounded-2xl shadow-xl overflow-hidden" align="end">
-                <div className="bg-amber-500 p-4 text-white">
-                    <h4 className="font-bold text-base flex items-center gap-2">
-                        <Sparkles className="h-5 w-5" />
-                        Extras del Item
-                    </h4>
-                    <p className="text-[10px] opacity-90 mt-0.5 uppercase tracking-wider font-semibold">
-                        {row.item_nombre || "Cargando..."}
-                    </p>
-                </div>
-                
-                <div className="p-4 space-y-4">
-                    {row.extras.length > 0 ? (
-                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                            {row.extras.map((extra) => (
-                                <div
-                                    key={extra.id}
-                                    className="flex items-center justify-between p-3 bg-muted/50 rounded-xl group transition-colors hover:bg-muted"
-                                >
-                                    <div className="flex-1">
-                                        <p className="font-bold text-sm text-foreground">
-                                            {extra.ingrediente_nombre || extra.descripcion}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <Badge variant="outline" className="h-4 text-[9px] px-1 py-0">BS {extra.precio.toFixed(2)}</Badge>
-                                            <span className="text-[10px] text-muted-foreground opacity-70 italic">Cantidad: {extra.cantidad}</span>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-lg group-hover:bg-background"
-                                        onClick={() => removeExtraFromRow(row.id, extra.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground italic">
-                            <Plus className="h-8 w-8 opacity-20 mb-2" />
-                            <p className="text-xs">No hay extras aplicados aún</p>
-                        </div>
-                    )}
-
-                    <div className="space-y-4 bg-muted/30 p-4 rounded-2xl border border-dashed">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest pl-1">Precio Personalizado</label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative flex-1">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Bs</span>
-                                    <Input
-                                        type="number"
-                                        placeholder="0.00"
-                                        step="0.01"
-                                        min="0"
-                                        value={extraForm.precio}
-                                        onChange={(e) =>
-                                            setExtraForm({
-                                                ...extraForm,
-                                                precio: e.target.value,
-                                            })
-                                        }
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.preventDefault();
-                                                addExtraToRow(row.id);
-                                            }
-                                        }}
-                                        className="h-10 pl-9 text-sm font-bold rounded-xl border-none shadow-inner bg-background"
-                                    />
-                                </div>
-                                <Button
-                                    size="icon"
-                                    className="h-10 w-10 shrink-0 rounded-xl"
-                                    onClick={() => addExtraToRow(row.id)}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-
-                        <Separator className="opacity-50" />
-                        
+        <div className="relative group/selector w-full">
+            <Input
+                placeholder="Item o descripción..."
+                value={itemNombre}
+                onChange={(e) => onNameChange(e.target.value)}
+                className={cn(
+                    "h-9 pr-14 text-sm font-medium bg-background/50 focus:bg-background transition-all rounded-xl border-muted-foreground/10",
+                    !value && "text-muted-foreground italic font-normal",
+                    className
+                )}
+            />
+            <div className="absolute right-0 top-0 h-full flex items-center pr-1 gap-0.5">
+                {price && (
+                    <span className="text-[9px] font-bold text-success/70 pointer-events-none px-1.5 py-0.5 rounded-lg border border-success/20 bg-success/5 mr-1">
+                        Bs {price}
+                    </span>
+                )}
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
                         <Button
-                            size="sm"
-                            className="w-full h-10 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-xl"
-                            onClick={() => addExtraToRow(row.id)}
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg hover:bg-muted/50 text-muted-foreground"
                         >
-                            <Plus className="h-3.5 w-3.5 mr-2" />
-                            Agregar Detalle Extra
+                            <Search className="h-3.5 w-3.5 shrink-0 opacity-50" />
                         </Button>
-                    </div>
-                </div>
-            </PopoverContent>
-        </Popover>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 w-[320px] shadow-2xl border-primary/10 rounded-2xl overflow-hidden" align="start">
+                        <Command>
+                            <div className="flex items-center border-b px-3 bg-muted/20">
+                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                <CommandInput placeholder="Buscar plato o producto..." className="h-10 border-none focus:ring-0 bg-transparent" />
+                            </div>
+                            <CommandList className="max-h-[300px] overflow-y-auto">
+                                <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">No se encontraron resultados.</CommandEmpty>
+
+                                {platos.length > 0 && (
+                                    <CommandGroup heading="Platos">
+                                        {platos.map((plato) => (
+                                            <CommandItem
+                                                key={plato.id}
+                                                value={plato.nombre}
+                                                onSelect={() => {
+                                                    onSelect(plato.id);
+                                                    setOpen(false);
+                                                }}
+                                                className="flex items-center justify-between cursor-pointer py-2.5 px-3"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Utensils className="h-4 w-4 text-orange-500" />
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-sm leading-none mb-1">{plato.nombre}</span>
+                                                        <span className="text-[10px] text-muted-foreground">Bs {Number(plato.precio).toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                                {value === plato.id && <Check className="h-4 w-4 text-primary" />}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                )}
+
+                                {productos.length > 0 && (
+                                    <CommandGroup heading="Productos">
+                                        {productos.map((producto) => (
+                                            <CommandItem
+                                                key={producto.id}
+                                                value={producto.nombre}
+                                                onSelect={() => {
+                                                    onSelect(producto.id);
+                                                    setOpen(false);
+                                                }}
+                                                className="flex items-center justify-between cursor-pointer py-2.5 px-3"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <ShoppingBag className="h-4 w-4 text-blue-500" />
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-sm leading-none mb-1">{producto.nombre}</span>
+                                                        <span className="text-[10px] text-muted-foreground">Bs {Number(producto.precio).toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                                {value === producto.id && <Check className="h-4 w-4 text-primary" />}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                )}
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+            </div>
+        </div>
     );
 }
 

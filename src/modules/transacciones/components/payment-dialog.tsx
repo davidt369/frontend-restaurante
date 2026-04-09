@@ -69,6 +69,13 @@ export function PaymentDialog({
 }: PaymentDialogProps) {
     const [cambioCalculado, setCambioCalculado] = useState<number>(0);
 
+    // Safely parse monetary values with fallback
+    const parseMoneyValue = (value: string | number | null | undefined): number => {
+        if (value === null || value === undefined) return 0;
+        const parsed = typeof value === 'string' ? parseFloat(value) : value;
+        return isNaN(parsed) ? 0 : parsed;
+    };
+
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -85,9 +92,10 @@ export function PaymentDialog({
 
     useEffect(() => {
         if (transaccion && open) {
+            const pendiente = parseMoneyValue(transaccion.monto_pendiente);
             form.reset({
                 metodo_pago: "efectivo",
-                monto: 0,
+                monto: pendiente,
                 monto_recibido: 0,
                 referencia_qr: "",
             });
@@ -118,13 +126,6 @@ export function PaymentDialog({
     };
 
     if (!transaccion) return null;
-
-    // Safely parse monetary values with fallback
-    const parseMoneyValue = (value: string | number | null | undefined): number => {
-        if (value === null || value === undefined) return 0;
-        const parsed = typeof value === 'string' ? parseFloat(value) : value;
-        return isNaN(parsed) ? 0 : parsed;
-    };
 
     const montoPendiente = parseMoneyValue(transaccion.monto_pendiente);
     const montoTotal = parseMoneyValue(transaccion.monto_total);
@@ -241,7 +242,8 @@ export function PaymentDialog({
                                             placeholder="0.00"
                                             {...field}
                                             onChange={(e) => {
-                                                const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                                const rawVal = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                                const val = Math.max(0, rawVal);
                                                 field.onChange(val);
                                             }}
                                         />
@@ -270,7 +272,8 @@ export function PaymentDialog({
                                                     placeholder="0.00"
                                                     {...field}
                                                     onChange={(e) => {
-                                                        const val = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                                        const rawVal = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                                                        const val = Math.max(0, rawVal);
                                                         field.onChange(val);
                                                     }}
                                                 />

@@ -105,10 +105,13 @@ export function CajaDashboard({ caja, onCajaCerrada, onRefreshCaja }: CajaDashbo
       setHasPendingOrders(
         transacciones.some(
           t =>
-            t.estado === 'pendiente' ||
-            t.estado === 'abierto' ||
-            Number(t.monto_pendiente) > 0 ||
-            t.estado_cocina === 'pendiente',
+            t.estado !== 'anulado' && // Ignorar anulados
+            (
+              t.estado === 'abierto' ||
+              (t.estado === 'pendiente' && Number(t.monto_total) > 0) || // Solo si tiene monto
+              Number(t.monto_pendiente) > 0.01 || // Diferencia por decimales
+              t.estado_cocina === 'pendiente'
+            ),
         ),
       );
     } catch (error) {

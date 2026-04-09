@@ -21,7 +21,7 @@ const transaccionSchema = z.object({
     concepto: z.string().min(1, "El concepto es requerido"),
     mesa: z.string().optional(),
     cliente: z.string().optional(),
-    estado: z.enum(["pendiente", "abierto", "cerrado"]),
+    estado: z.enum(["pendiente", "abierto", "cerrado", "anulado"]),
 });
 
 interface UseTransactionProps {
@@ -63,25 +63,17 @@ export function useTransaction({
             precio: 0,
             extras: [],
             notas: "",
+            mesa: "",
             subtotal: 0,
         },
     ]);
 
-    // Extras management
-    const [extrasPopoverOpen, setExtrasPopoverOpen] = useState<{ [key: string]: boolean }>({});
-    const [extraForm, setExtraForm] = useState<{
-        precio: string;
-    }>({
-        precio: "",
-    });
 
     // Payment
     const [showPayment, setShowPayment] = useState(true);
     const [metodoPago, setMetodoPago] = useState<"efectivo" | "qr">("efectivo");
     const [montoPago, setMontoPago] = useState<number>(0);
     const [montoRecibido, setMontoRecibido] = useState<number>(0);
-
-    const [mesaOpen, setMesaOpen] = useState(false);
 
     // Refs for keyboard navigation
     const cantidadInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
@@ -121,9 +113,10 @@ export function useTransaction({
             // Default to total if it's currently 0, in sync with previous total, or invalid
             setMontoPago(total);
         }
-        
+
         prevTotalRef.current = total;
-    }, [total, metodoPago, showPayment]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [total, metodoPago, showPayment, montoPago]);
 
     const fetchData = async () => {
         try {
@@ -160,8 +153,10 @@ export function useTransaction({
     };
 
     const calculateSubtotal = (cantidad: number, precio: number, extras: ItemExtra[]) => {
-        const extrasTotal = extras.reduce((sum, extra) => sum + (extra.precio * extra.cantidad), 0);
-        return (precio + extrasTotal) * cantidad;
+        const qty = Math.max(0, cantidad);
+        const basePrice = Math.max(0, precio);
+        const extrasTotal = extras.reduce((sum, extra) => sum + (Math.max(0, extra.precio) * Math.max(0, extra.cantidad)), 0);
+        return (basePrice + extrasTotal) * qty;
     };
 
     const updateRow = (id: string, updates: Partial<ItemRow>) => {
@@ -222,6 +217,7 @@ export function useTransaction({
             precio: 0,
             extras: [],
             notas: "",
+            mesa: "",
             subtotal: 0,
         };
         setRows([...rows, newRow]);
@@ -239,6 +235,7 @@ export function useTransaction({
                 precio: 0,
                 extras: [],
                 notas: "",
+                mesa: "",
                 subtotal: 0,
             },
         ]);
@@ -253,31 +250,16 @@ export function useTransaction({
             resetForm();
             return;
         }
-        
+
         setRows((prev) => prev.filter((row) => row.id !== id));
-        
-        // Limpiar popover si estaba abierto
-        setExtrasPopoverOpen((prev) => {
-            if (!prev[id]) return prev;
-            const next = { ...prev };
-            delete next[id];
-            return next;
-        });
     };
 
     // Extras management functions
-    const addExtraToRow = (rowId: string) => {
-        const precio = parseFloat(extraForm.precio);
-
-        if (isNaN(precio) || precio <= 0) {
-            toast.error("El precio debe ser mayor a 0");
-            return;
-        }
-
+    const addExtraToRow = (rowId: string, precio: number, descripcion: string) => {
         const newExtra: ItemExtra = {
             id: generateId(),
             tipo: "custom",
-            descripcion: "Extra",
+            descripcion: descripcion || "Extra",
             precio,
             cantidad: 1,
         };
@@ -292,11 +274,6 @@ export function useTransaction({
                 return row;
             })
         );
-
-        // Reset form
-        setExtraForm({
-            precio: "",
-        });
 
         toast.success("Extra agregado");
     };
@@ -388,23 +365,35 @@ export function useTransaction({
             estadoFinal = "abierto";
         }
 
-        const itemsDto: AddItemDto[] = validRows.map((row) => ({
-            producto_id: row.tipo === "producto" ? row.item_id : undefined,
-            plato_id: row.tipo === "plato" ? row.item_id : undefined,
-            cantidad: row.cantidad,
-            notas: row.notas || undefined,
-            extras: row.extras.map(e => ({
-                descripcion: e.descripcion,
-                precio: e.precio,
-                cantidad: e.cantidad,
-                ingrediente_id: e.ingrediente_id
-            }))
-        }));
+        const itemsDto: AddItemDto[] = validRows.map((row) => {
+            // Incorporar la ubicación de la fila en las notas para que llegue a cocina
+            // ya que el backend no soporta mesa por item directamente
+            let finalNotas = row.notas || "";
+            if (row.mesa) {
+                finalNotas = `[${row.mesa.trim()}] ${finalNotas}`.trim();
+            }
+
+            return {
+                producto_id: row.tipo === "producto" ? row.item_id : undefined,
+                plato_id: row.tipo === "plato" ? row.item_id : undefined,
+                cantidad: row.cantidad,
+                notas: finalNotas || undefined,
+                extras: row.extras.map(e => ({
+                    descripcion: e.descripcion,
+                    precio: e.precio,
+                    cantidad: e.cantidad,
+                    ingrediente_id: e.ingrediente_id || undefined
+                }))
+            };
+        });
+
+        // La mesa de la transacción será la de la primera fila que tenga una definida
+        const transaccionMesa = validRows.find(r => r.mesa)?.mesa?.trim();
 
         const transaccionDto: CreateTransaccionDto = {
             nro_reg: nextNroReg,
-            concepto: values.concepto,
-            mesa: values.mesa || undefined,
+            concepto: "Pedido", // Concepto fijo requerido por el backend
+            mesa: transaccionMesa || undefined,
             cliente: values.cliente || undefined,
             estado: estadoFinal,
             caja_id: cajaActual || undefined,
@@ -429,6 +418,11 @@ export function useTransaction({
     const validItemCount = rows.filter((row) => row.item_id).length;
     const cambio = metodoPago === "efectivo" ? Math.max(0, montoRecibido - montoPago) : 0;
 
+    const handleSetMontoPago = (monto: number) =>
+        setMontoPago(Math.max(0, monto));
+    const handleSetMontoRecibido = (monto: number) =>
+        setMontoRecibido(Math.max(0, monto));
+
     return {
         // Data
         productos,
@@ -439,20 +433,14 @@ export function useTransaction({
 
         // State
         rows,
-        extrasPopoverOpen,
-        setExtrasPopoverOpen,
-        extraForm,
-        setExtraForm,
         showPayment,
         setShowPayment,
         metodoPago,
         setMetodoPago,
         montoPago,
-        setMontoPago,
+        setMontoPago: handleSetMontoPago,
         montoRecibido,
-        setMontoRecibido,
-        mesaOpen,
-        setMesaOpen,
+        setMontoRecibido: handleSetMontoRecibido,
 
         // Refs
         cantidadInputRefs,

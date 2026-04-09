@@ -33,10 +33,6 @@ export function UnifiedTransactionView({
 
         // State
         rows,
-        extrasPopoverOpen,
-        setExtrasPopoverOpen,
-        extraForm,
-        setExtraForm,
         showPayment,
         setShowPayment,
         metodoPago,
@@ -45,8 +41,6 @@ export function UnifiedTransactionView({
         setMontoPago,
         montoRecibido,
         setMontoRecibido,
-        mesaOpen,
-        setMesaOpen,
 
         // Refs
         cantidadInputRefs,
@@ -103,15 +97,13 @@ export function UnifiedTransactionView({
                     <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-background/50">
                         <TransactionHeaderForm
                             form={form}
-                            mesaOpen={mesaOpen}
-                            setMesaOpen={setMesaOpen}
-                            ubicacion={ubicacion}
                         />
 
                         <TransactionItemsTable
                             rows={rows}
                             platos={platos}
                             productos={productos}
+                            ubicacion={ubicacion}
                             selectItem={selectItem}
                             updateRow={updateRow}
                             incrementCantidad={incrementCantidad}
@@ -121,10 +113,6 @@ export function UnifiedTransactionView({
                             addExtraToRow={addExtraToRow}
                             removeExtraFromRow={removeExtraFromRow}
                             handleKeyDown={handleKeyDown}
-                            extrasPopoverOpen={extrasPopoverOpen}
-                            setExtrasPopoverOpen={setExtrasPopoverOpen}
-                            extraForm={extraForm}
-                            setExtraForm={setExtraForm}
                             cantidadInputRefs={cantidadInputRefs}
                             notasInputRefs={notasInputRefs}
                         />

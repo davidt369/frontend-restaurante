@@ -10,8 +10,8 @@ export type Transaccion = {
     monto_pendiente: string;
     mesa?: string | null;
     cliente?: string | null;
-    estado: 'pendiente' | 'abierto' | 'cerrado';
-    estado_cocina?: 'pendiente' | 'terminado';
+    estado: 'pendiente' | 'abierto' | 'cerrado' | 'anulado';
+    estado_cocina?: 'pendiente' | 'terminado' | 'anulado';
     caja_id?: number | null;
     usuario_id: string;
     creado_en: string;
@@ -79,7 +79,7 @@ export type CreateTransaccionDto = {
     concepto: string;
     mesa?: string;
     cliente?: string;
-    estado?: 'pendiente' | 'abierto' | 'cerrado';
+    estado?: 'pendiente' | 'abierto' | 'cerrado' | 'anulado';
     caja_id?: number;
     items?: AddItemDto[];
 };
@@ -88,7 +88,7 @@ export type UpdateTransaccionDto = {
     concepto?: string;
     mesa?: string;
     cliente?: string;
-    estado?: 'pendiente' | 'abierto' | 'cerrado';
+    estado?: 'pendiente' | 'abierto' | 'cerrado' | 'anulado';
 };
 
 export type AddItemDto = {
@@ -133,6 +133,7 @@ export interface ItemRow {
     precio: number;
     notas: string;
     extras: ItemExtra[];
+    mesa: string;
     subtotal: number;
 }
 
@@ -140,5 +141,5 @@ export interface TransaccionFormValues {
     concepto: string;
     mesa?: string;
     cliente?: string;
-    estado: "pendiente" | "abierto" | "cerrado";
+    estado: "pendiente" | "abierto" | "cerrado" | "anulado";
 }

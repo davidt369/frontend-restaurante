@@ -47,7 +47,7 @@ const formSchema = z.object({
     concepto: z.string().min(1, "El concepto es requerido"),
     mesa: z.string().optional(),
     cliente: z.string().optional(),
-    estado: z.enum(["pendiente", "abierto", "cerrado"]).optional(),
+    estado: z.enum(["pendiente", "abierto", "cerrado", "anulado"]).optional(),
     caja_id: z.number().optional(),
 });
 
@@ -225,6 +225,7 @@ export function TransaccionDialog({
                                                 <SelectItem value="pendiente">Pendiente</SelectItem>
                                                 <SelectItem value="abierto">Abierto</SelectItem>
                                                 <SelectItem value="cerrado">Cerrado</SelectItem>
+                                                <SelectItem value="anulado">Anulado</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
