@@ -252,7 +252,10 @@ function buildPDF(doc: jsPDF, data: ReporteCajaData): void {
   doc.text("NRO. VENTAS", marginLeft + (boxWidth + 3) * 3 + boxWidth / 2, currentY + 7, { align: "center" });
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text((data.resumen.ventas_count ?? 0).toString(), marginLeft + (boxWidth + 3) * 3 + boxWidth / 2, currentY + 16, { align: "center" });
+  
+  // Real count of sales: favor explicit count if valid, then fallback to collection length
+  const realVentasCount = data.resumen.ventas_count || (data.ventasDetalladas?.length) || (data.ventas?.length) || 0;
+  doc.text(realVentasCount.toString(), marginLeft + (boxWidth + 3) * 3 + boxWidth / 2, currentY + 16, { align: "center" });
 
   // ========== METODOS DE PAGO ==========
   currentY += 32;
@@ -819,7 +822,10 @@ export function generateGeneralReportPDF(
   const totalInicial = cajas.reduce((sum, c) => sum + c.resumen.monto_inicial, 0);
   const totalVentasEfectivo = cajas.reduce((sum, c) => sum + c.resumen.ventas_efectivo, 0);
   const totalVentasQR = cajas.reduce((sum, c) => sum + c.resumen.ventas_qr, 0);
-  const totalVentasCount = cajas.reduce((sum, c) => sum + (c.resumen.ventas_count || c.ventas.length), 0);
+  const totalVentasCount = cajas.reduce((sum, c) => {
+    const count = c.resumen.ventas_count || (c.ventasDetalladas?.length) || (c.ventas?.length) || 0;
+    return sum + count;
+  }, 0);
   
   const allDeletedItems = cajas.flatMap(c => c.itemsEliminados || []);
   const totalDeletedItems = allDeletedItems.length;

@@ -186,19 +186,24 @@ export function HistorialTransaccionesPage() {
             return {
                 caja,
                 ventas: cajaVentas,
-                resumen: detail?.resumen || {
-                    monto_inicial: caja.monto_inicial || 0,
-                    ventas_efectivo: caja.ventas_efectivo || 0,
-                    ventas_qr: caja.ventas_qr || 0,
-                    gastos_efectivo: 0,
-                    gastos_qr: 0,
-                    efectivo_esperado: (caja.monto_inicial || 0) + (caja.ventas_efectivo || 0),
-                    total_qr: caja.ventas_qr || 0,
-                    total_del_dia: (caja.ventas_efectivo || 0) + (caja.ventas_qr || 0),
-                    total_gastos: 0,
-                    ventas_count: ventasCount,
-                    promedio_venta: promedioVenta,
-                },
+                resumen: detail?.resumen 
+                    ? { 
+                        ...detail.resumen, 
+                        ventas_count: detail.resumen.ventas_count || ventasCount 
+                      } 
+                    : {
+                        monto_inicial: caja.monto_inicial || 0,
+                        ventas_efectivo: caja.ventas_efectivo || 0,
+                        ventas_qr: caja.ventas_qr || 0,
+                        gastos_efectivo: 0,
+                        gastos_qr: 0,
+                        efectivo_esperado: (caja.monto_inicial || 0) + (caja.ventas_efectivo || 0),
+                        total_qr: caja.ventas_qr || 0,
+                        total_del_dia: (caja.ventas_efectivo || 0) + (caja.ventas_qr || 0),
+                        total_gastos: 0,
+                        ventas_count: ventasCount,
+                        promedio_venta: promedioVenta,
+                    },
                 gastos: detail?.gastos || [],
                 itemsMasVendidos: cajaItems,
                 ventasPorMesa,
@@ -378,7 +383,7 @@ export function HistorialTransaccionesPage() {
                 }
             } else {
                 // Export all cajas - show preview of first one or generate general
-                const allData = groupedByCaja.map(c => ({
+                const allData: ReporteCajaData[] = groupedByCaja.map(c => ({
                     caja: {
                         id: c.caja.id,
                         fecha: c.caja.fecha,
@@ -402,6 +407,8 @@ export function HistorialTransaccionesPage() {
                     resumen: c.resumen,
                     ventas: c.ventas,
                     gastos: c.gastos,
+                    items: c.itemsMasVendidos,
+                    ventasPorMesa: c.ventasPorMesa
                 }));
                 generateGeneralReportPDF(allData);
                 toast.success("Reporte general generado");

@@ -89,7 +89,7 @@ export function TransaccionesPage() {
                 </div>
 
                 {!cajaAbiertaId && !loading && (
-                    <div className="bg-warning-bg border-l-4 border-warning-border p-4 mb-4 text-warning-foreground border rounded">
+                    <div className="bg-warning-bg border-l-4 border-secondary-border p-4 mb-4 text-secondary-foreground border rounded">
                         <div className="flex">
                             <div className="ml-3">
                                 <p className="text-sm">
